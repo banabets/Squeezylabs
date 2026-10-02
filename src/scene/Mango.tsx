@@ -1,3 +1,4 @@
+import { foliageMap } from './Botanical';
 import { useMemo } from 'react';
 import { BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshDepthMaterial, MeshStandardMaterial, Object3D, Quaternion, RGBADepthPacking, Shape, ShapeGeometry, SphereGeometry, Vector3, type Material } from 'three';
 import { addWind } from './wind';
@@ -12,13 +13,13 @@ export const leafGeometry = (() => { const s = new Shape(); s.moveTo(0, 0); s.qu
 
 // Long mango leaf, folded along the midrib; length 1 along +y.
 const lanceGeometry = (() => {
-  const g = new BufferGeometry(), p: number[] = [], idx: number[] = [];
+  const g = new BufferGeometry(), p: number[] = [], uv: number[] = [], idx: number[] = [];
   for (let j = 0; j <= 5; j++) {
     const t = j / 5, w = Math.pow(Math.sin(Math.PI * Math.min(t * 1.12, 1)), .8) * .11;
-    for (let s = -1; s <= 1; s++) p.push(s * w, t, -Math.abs(s) * w * .55);
+    for (let s = -1; s <= 1; s++) {p.push(s * w, t, -Math.abs(s) * w * .3-t*t*.14);uv.push((s+1)/2,t);}
     if (j < 5) { const n = j * 3; idx.push(n, n + 3, n + 1, n + 1, n + 3, n + 4, n + 1, n + 4, n + 2, n + 2, n + 4, n + 5); }
   }
-  g.setAttribute('position', new Float32BufferAttribute(p, 3)); g.setIndex(idx); g.computeVertexNormals();
+  g.setAttribute('position', new Float32BufferAttribute(p, 3)); g.setAttribute('uv', new Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   return g;
 })();
 
@@ -37,7 +38,7 @@ function materials() {
   const fruitGeo = new SphereGeometry(.1, 12, 9); fruitGeo.scale(1, 1.32, .88);
   const wind = { base: 2.5, amp: .012, flutter: .012 };
   shared = {
-    leaf: addWind(new MeshStandardMaterial({ roughness: .5, side: DoubleSide }), wind),
+    leaf: addWind(new MeshStandardMaterial({map:foliageMap(), roughness: .62, side: DoubleSide }), wind),
     fruit: addWind(new MeshStandardMaterial({ roughness: .4 }), { ...wind, flutter: 0 }),
     leafDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking, side: DoubleSide }), wind),
     fruitDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking }), { ...wind, flutter: 0 }),
@@ -48,7 +49,7 @@ function materials() {
   return shared;
 }
 
-const greens = ['#1d4422', '#24502a', '#2c5c2e', '#356634', '#1f4a26'].map(c => new Color(c));
+const greens = ['#91aa74', '#adc28c', '#819b69', '#bdcc97', '#829a63'].map(c => new Color(c));
 const flushColors = ['#7e3426', '#9a4a30', '#b26a40', '#8f5a34'].map(c => new Color(c));
 const fruitColors = ['#6f9a34', '#a9b23a', '#e6b230', '#ef8a2a', '#d4532c'].map(c => new Color(c));
 const noRaycast = () => {};
@@ -83,7 +84,7 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
   for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283 + R() * .5; grow(top, new Vector3(Math.cos(a) * .8, 1, Math.sin(a) * .8).normalize(), 2.4 + R() * .5, .24, 4); }
 
   let count = 0;
-  for (const tp of tips) { tp.flush = tp.big && R() < .2; tp.n = tp.big ? 30 : 16; count += tp.n; }
+  for (const tp of tips) { tp.flush = tp.big && R() < .07; tp.n = tp.big ? 30 : 16; count += tp.n; }
   const leaves = new InstancedMesh(lanceGeometry, m.leaf, count), o = new Object3D(), u = new Vector3(), v = new Vector3(), ld = new Vector3(), q = new Quaternion(), q2 = new Quaternion();
   let idx = 0;
   const gcd=(a:number,b:number):number=>b?gcd(b,a%b):a;
@@ -97,7 +98,7 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
       ld.y -= .15 + R() * .25; ld.normalize();
       q.setFromUnitVectors(Y, ld); q2.setFromAxisAngle(ld, phi + R());
       o.quaternion.copy(q2).multiply(q); o.position.copy(tp.p);
-      const L = (tp.big ? .6 : .5) * (.8 + R() * .4); o.scale.set(L * 1.5, L, L);
+      const L = (tp.big ? .45 : .36) * (.8 + R() * .4); o.scale.set(L * 1.5, L, L);
       const slot=(idx*stride)%count;
       o.updateMatrix(); leaves.setMatrixAt(slot, o.matrix);
       leaves.setColorAt(slot, tp.flush && k % 3 !== 0 ? flushColors[k % 4] : greens[(k + idx) % 5]); idx++;
@@ -130,3 +131,4 @@ export function MangoTree({ position, seed = 1, scale = 1 }: { position: [number
   const tree = useMemo(() => createMangoTree(position[0], position[1], seed, scale), [position[0], position[1], seed, scale]);
   return <primitive object={tree} />;
 }
+

@@ -3,10 +3,10 @@ import { Color, Vector3, type DirectionalLight, type HemisphereLight, type Scene
 // One day across the scroll: morning on arrival, noon in the studio, afternoon at the bodega, sunset on the horizon.
 type Key = { p: number; sun: [number, number, number]; color: string; intensity: number; hemiSky: string; hemiGround: string; hemi: number; top: string; horizon: string };
 const KEYS: Key[] = [
-  { p: 0, sun: [24, 16, 18], color: '#ffe2bd', intensity: 3.1, hemiSky: '#cfe3f2', hemiGround: '#c9b896', hemi: .72, top: '#5f9fd2', horizon: '#cfe6ea' },
-  { p: .45, sun: [-4, 34, 12], color: '#fff6e6', intensity: 3.6, hemiSky: '#bcdcf2', hemiGround: '#c5b493', hemi: .7, top: '#3f8fd0', horizon: '#bfe0ea' },
-  { p: .82, sun: [-24, 15, 12], color: '#ffd6a0', intensity: 3.3, hemiSky: '#d9d6c6', hemiGround: '#b9a07e', hemi: .66, top: '#5a92c8', horizon: '#efd6b8' },
-  { p: 1, sun: [-30, 6.5, 10], color: '#ff9a55', intensity: 2.6, hemiSky: '#e8b59a', hemiGround: '#7d6253', hemi: .55, top: '#5d78b2', horizon: '#f2a978' },
+  { p: 0, sun: [24, 16, 18], color: '#ffe2bd', intensity: 3.1, hemiSky: '#cfe3f2', hemiGround: '#c9b896', hemi: .36, top: '#5f9fd2', horizon: '#cfe6ea' },
+  { p: .45, sun: [-4, 34, 12], color: '#fff6e6', intensity: 3.6, hemiSky: '#bcdcf2', hemiGround: '#c5b493', hemi: .32, top: '#3f8fd0', horizon: '#bfe0ea' },
+  { p: .82, sun: [-24, 15, 12], color: '#ffd6a0', intensity: 3.3, hemiSky: '#d9d6c6', hemiGround: '#b9a07e', hemi: .34, top: '#5a92c8', horizon: '#efd6b8' },
+  { p: 1, sun: [-30, 6.5, 10], color: '#ff9a55', intensity: 2.6, hemiSky: '#e8b59a', hemiGround: '#7d6253', hemi: .3, top: '#5d78b2', horizon: '#f2a978' },
 ];
 
 // Raw (display-space) colors for hand-written shaders that skip color management.
@@ -37,3 +37,4 @@ export function applyDaylight(p: number, sun: DirectionalLight, hemi: Hemisphere
   if (scene.background instanceof Color) scene.background.copy(linKeys[i].horizon).lerp(linKeys[i + 1].horizon, f);
   if (scene.fog instanceof Fog) scene.fog.color.copy(linKeys[i].horizon).lerp(linKeys[i + 1].horizon, f);
 }
+

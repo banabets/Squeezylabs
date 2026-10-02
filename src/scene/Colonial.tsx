@@ -1,3 +1,5 @@
+import { surfaces } from './Materials';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { useMemo } from 'react';
 import { BoxGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, ExtrudeGeometry, Group, Shape, IcosahedronGeometry, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, RepeatWrapping, SphereGeometry, SRGBColorSpace, type Material } from 'three';
 import { leafGeometry, rng, trunk } from './Mango';
@@ -39,16 +41,22 @@ export type ColonialOptions = {
   seed?: number;
 };
 
+function limewash(color:string){
+ const m=new MeshStandardMaterial({...surfaces.plaster,color,roughness:.94});
+ m.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#ifdef USE_MAP
+ vec4 plasterSample=texture2D(map,vMapUv);
+ diffuseColor.rgb*=mix(vec3(.79),vec3(1.09),plasterSample.rgb);
+ #endif`);};m.customProgramCacheKey=()=> 'coastal-limewash-v1';return m;
+}
 // Coastal colonial house, like in Margarita or Coro: thick limewashed walls with deep openings,
 // turned wooden window grilles, a two-leaf door, blue base band, cornice and a gable of clay tiles.
 // The front face sits on z = 0 and the house extends toward -z; the floor platform is 0.3 m high.
 export function createColonialHouse(o: ColonialOptions) {
   const { width, depth, height = 3.6, wall = '#f3ead8', zocalo = '#2f6f9e', door = '#2e6f6a', portico = false, windows = [-width * .3, width * .3], doorX = 0, bougainvillea = false, seed = 1 } = o;
   const g = new Group(), R = rng(seed);
-  const tex = plaster(wall).clone(); tex.needsUpdate = true; tex.repeat.set(width / 4, height / 3.6);
-  const wallM = new MeshStandardMaterial({ map: tex, roughness: .95 }), trim = new MeshStandardMaterial({ color: '#f8f5ee', roughness: .85 });
-  const blue = new MeshStandardMaterial({ color: zocalo, roughness: .8 }), woodM = new MeshStandardMaterial({ map: wood(), roughness: .8 }), dark = new MeshStandardMaterial({ color: '#2a2420', roughness: .9 }), stone = new MeshStandardMaterial({ color: '#cfc4ad', roughness: .95 });
-  const box = (w: number, h: number, d: number, mat: Material, x: number, y: number, z: number, parent: Group = base) => { const m = new Mesh(new BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+  const wallM=limewash(wall),trim=limewash('#ede6d4');
+  const blue=limewash(zocalo),woodM=new MeshStandardMaterial({...surfaces.wood,color:'#c4bdac',roughness:.88}),dark=new MeshStandardMaterial({color:'#2a2420',roughness:.9}),stone=new MeshStandardMaterial({normalMap:surfaces.plaster?.normalMap,color:'#cfc4ad',roughness:.95});
+  const box = (w: number, h: number, d: number, mat: Material, x: number, y: number, z: number, parent: Group = base) => { const m = new Mesh(new RoundedBoxGeometry(w,h,d,2,Math.min(.018,w/8,h/8,d/8)), mat); m.position.set(x, y, z); const p=m.geometry.attributes.position,n=m.geometry.attributes.normal,uv=m.geometry.attributes.uv;for(let i=0;i<p.count;i++){uv.setXY(i,(Math.abs(n.getX(i))>.5?p.getZ(i)+z:p.getX(i)+x)*.6,(Math.abs(n.getY(i))>.5?p.getZ(i)+z:p.getY(i)+y)*.6);} m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
   const plat = new Mesh(new BoxGeometry(width + 1.2, .3, depth + 1.2), stone); plat.position.set(0, .15, -depth / 2 + .2); plat.castShadow = plat.receiveShadow = true; g.add(plat);
   const base = new Group(); base.position.y = .3; g.add(base);
   const T = .42;
@@ -91,7 +99,7 @@ export function createColonialHouse(o: ColonialOptions) {
   // Clay-tile gable roof along x, sloping toward ±z
   const pitch = .42, overhang = .55, half = depth / 2 + overhang, slopeLen = half / Math.cos(pitch), y0 = height + .14;
   const cols = Math.ceil((width + 2 * overhang) / .2), rows = Math.ceil(slopeLen / .36);
-  const tiles = new InstancedMesh(tileGeo, new MeshStandardMaterial({ roughness: .8, side: DoubleSide }), cols * rows * 2 + cols), t = new Object3D();
+  const tiles = new InstancedMesh(tileGeo, new MeshStandardMaterial({ normalMap:surfaces.plaster?.normalMap, roughnessMap:surfaces.plaster?.roughnessMap, roughness: .94, side: DoubleSide }), cols * rows * 2 + cols), t = new Object3D();
   let n = 0;
   [-1, 1].forEach(sd => { for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
     const along = (r + .5) * .36;
@@ -108,13 +116,13 @@ export function createColonialHouse(o: ColonialOptions) {
   const gableGeo = new ExtrudeGeometry(tri, { depth: T, bevelEnabled: false });
   [-1, 1].forEach(s => { const gm = new Mesh(gableGeo, wallM); gm.rotation.y = Math.PI / 2; gm.position.set(s * (width / 2) - (s > 0 ? T : 0), y0 - .02, -depth / 2); gm.castShadow = gm.receiveShadow = true; base.add(gm); });
   if (bougainvillea) {
-    const mat = addWind(new MeshStandardMaterial({ roughness: .8, side: DoubleSide }), { base: .5, amp: .004, flutter: .008 });
+    const mat = addWind(new MeshStandardMaterial({ normalMap:surfaces.plaster?.normalMap, roughnessMap:surfaces.plaster?.roughnessMap, roughness: .94, side: DoubleSide }), { base: .5, amp: .004, flutter: .008 });
     const bm = new InstancedMesh(leafGeometry, mat, 650), b = new Object3D();
     for (let i = 0; i < 650; i++) { b.position.set(width / 2 + .1 + (R() * 2 - 1) * .5, .3 + R() * height * .95, -.2 + (R() * 2 - 1) * .5); b.rotation.set(R() * 6, R() * 6, R() * 6); b.scale.setScalar((i % 3 === 0 ? .16 : .11) * (.8 + R() * .4)); b.updateMatrix(); bm.setMatrixAt(i, b.matrix); bm.setColorAt(i, new Color(i % 3 === 0 ? ['#2f5a2e', '#3d6b34'][i % 2] : ['#c8246b', '#e0408a', '#a81d5c'][i % 3])); }
     bm.castShadow = true; g.add(bm);
   }
   const potM = new MeshStandardMaterial({ color: '#b9663f', roughness: .9 }), bushM = new MeshStandardMaterial({ color: '#3f6e36', roughness: .85 });
-  (portico ? [-width / 2 + .3, width / 2 - .3] : [doorX - 1.35, doorX + 1.5]).forEach((x, i) => { const p = new Mesh(new CylinderGeometry(.26, .19, .48, 14), potM); p.position.set(x, .54, .55); p.castShadow = true; g.add(p); const b = new Mesh(new IcosahedronGeometry(.36, 1), bushM); b.position.set(x, .95 + i * .05, .55); b.scale.y = .85; b.castShadow = true; g.add(b); });
+  (portico ? [-width / 2 + .3, width / 2 - .3] : [doorX - 1.35, doorX + 1.5]).forEach((x, i) => { const p = new Mesh(new CylinderGeometry(.26, .19, .48, 14), potM); p.position.set(x, .54, .55); p.castShadow = true; g.add(p); const b = new InstancedMesh(leafGeometry,new MeshStandardMaterial({color: '#4e6532',roughness:.8,side:DoubleSide}),85), ob=new Object3D(); for(let k=0;k<85;k++){const a=R()*Math.PI*2,r=.32*Math.sqrt(R());ob.position.set(x+Math.cos(a)*r,.92+R()*.25,.55+Math.sin(a)*r);ob.rotation.set(R()*2-1,R()*6,R()*2-1);ob.scale.setScalar(.10+R()*.08);ob.updateMatrix();b.setMatrixAt(k,ob.matrix);} b.castShadow=true;g.add(b); });
   return batchStatic(g);
 }
 
@@ -122,4 +130,7 @@ export function ColonialHouse({ position, rotation = 0, ...o }: ColonialOptions 
   const house = useMemo(() => createColonialHouse(o), [JSON.stringify(o)]);
   return <primitive object={house} position={position} rotation={[0, rotation, 0]} />;
 }
+
+
+
 

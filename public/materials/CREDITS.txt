@@ -13,3 +13,5 @@ Harina P.A.N. package — "Harina PAN hecha en USA" by Emmanuel Sosa, CC BY 2.0 
 Polar Pilsener label — "Birra Polar 001" by Phyrexian, public domain — https://commons.wikimedia.org/wiki/File:Birra_Polar_001.JPG
 
 Harina P.A.N., Polar, Brahma and the other product names shown in the bodega are trademarks of their owners and appear as decoration only.
+
+Palm Tree Bark — Poly Haven (CC0): https://polyhaven.com/a/palm_tree_bark — diffuse, normal GL, roughness, 1K.

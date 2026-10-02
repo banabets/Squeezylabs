@@ -30,16 +30,17 @@ function Daylight(){
  <directionalLight ref={sun} position={[24,16,18]} intensity={3.1} color="#ffe2bd" castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-36} shadow-camera-right={36} shadow-camera-top={36} shadow-camera-bottom={-36} shadow-camera-near={1} shadow-camera-far={120} shadow-bias={-.0003} shadow-normalBias={.025}/></>;
 }
 export const Experience=memo(function Experience({onReady,onSelect}:{onReady:()=>void;onSelect:(name:string)=>void}){
- return <div className="world" aria-label="Interactive Caribbean world"><Canvas shadows={{type:PCFSoftShadowMap}} dpr={[1,1.5]} camera={{position:[0,3.2,16],fov:53,near:.12,far:900}} gl={{antialias:true,powerPreference:'high-performance',toneMapping:ACESFilmicToneMapping,toneMappingExposure:1.15}} fallback={<div className="fallback">This world needs WebGL. Try a browser with hardware acceleration enabled.</div>}>
+ return <div className="world" aria-label="Interactive Caribbean world"><Canvas shadows={{type:PCFSoftShadowMap}} dpr={[1,1.5]} camera={{position:[0,3.2,16],fov:53,near:.12,far:900}} gl={{antialias:true,powerPreference:'high-performance',toneMapping:ACESFilmicToneMapping,toneMappingExposure:.95}} fallback={<div className="fallback">This world needs WebGL. Try a browser with hardware acceleration enabled.</div>}>
  <color attach="background" args={['#cfe6ea']}/><fog attach="fog" args={['#cfe6ea',80,320]}/>
  <Atmosphere/><CloudBank/>
  <Daylight/>
  <WindClock/>
  <PerformanceProbe/>
  <RenderBudget/>
- <Suspense fallback={null}><Environment files="/materials/coastal-light.hdr" environmentIntensity={.6}/><World onSelect={onSelect} onReady={onReady}/></Suspense>
+ <Suspense fallback={null}><Environment files="/materials/coastal-light.hdr" environmentIntensity={.32}/><World onSelect={onSelect} onReady={onReady}/></Suspense>
  </Canvas></div>;
 });
 function World({onReady,onSelect}:{onReady:()=>void;onSelect:(name:string)=>void}){useMaterials();return <><ClearWater/><Island/><Grounding/><TropicalGarden/><CoastalEntrance/><GamesArea onSelect={()=>onSelect('games')}/><WebAppsArea onSelect={()=>onSelect('web')}/><ExperimentLab onSelect={()=>onSelect('experiments')}/><StudioDetails/><Peneros/><Pueblo/><Bodega onSelect={onSelect}/><Mangroves/><BeachDetails/><Birds/><Visitor onSelect={()=>onSelect('about')}/><Pelican position={[-2,.72,-13]}/><CameraRig onReady={onReady}/><FoliageLod/></>;}
+
 
 
