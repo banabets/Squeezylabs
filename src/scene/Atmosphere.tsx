@@ -1,0 +1,5 @@
+import { BackSide } from 'three';
+export function Atmosphere(){return <mesh><sphereGeometry args={[500,32,16]}/><shaderMaterial side={BackSide} depthWrite={false} toneMapped={false} vertexShader={`varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`} fragmentShader={`varying vec3 vDirection;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+ void main(){vec3 d=normalize(vDirection);float h=max(d.y,0.);vec3 sky=mix(vec3(.70,.85,.87),vec3(.16,.48,.72),pow(h,.42));float sun=pow(max(0.,dot(d,normalize(vec3(-18.,30.,12.)))),220.);sky+=vec3(.22,.18,.10)*sun;vec2 p=d.xz/max(d.y+.15,.05)*3.;float n=noise(p)*.55+noise(p*2.1)*.28+noise(p*4.3)*.13;float clouds=smoothstep(.63,.79,n)*smoothstep(.03,.15,h)*(1.-smoothstep(.4,.8,h));sky=mix(sky,vec3(.95,.96,.91),clouds*.7);gl_FragColor=vec4(sky,1.);}`}/></mesh>;}

@@ -1,0 +1,3 @@
+import { useMemo } from 'react';
+import { CanvasTexture } from 'three';
+export function Grounding(){const map=useMemo(()=>{const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d')!,g=ctx.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(27,24,14,.7)');g.addColorStop(.35,'rgba(27,24,14,.34)');g.addColorStop(1,'rgba(27,24,14,0)');ctx.fillStyle=g;ctx.fillRect(0,0,128,128);return new CanvasTexture(c);},[]);return <>{[[-7,-1,7,6],[6,-3,8,7],[-4.4,7,3,3],[9,3,4,4],[-4,14,4,4],[5,15,4,4]].map(([x,z,w,h],i)=><mesh key={i} position={[x,.09,z]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[w,h]}/><meshBasicMaterial map={map} transparent depthWrite={false} opacity={.65}/></mesh>)}</>;}

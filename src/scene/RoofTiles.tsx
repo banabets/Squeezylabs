@@ -1,0 +1,9 @@
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { Color, DoubleSide, ExtrudeGeometry, InstancedMesh, Object3D, Shape } from 'three';
+import { Box, Beam } from './Primitives';
+import { surfaces } from './Materials';
+function Tiles({width,depth}:{width:number;depth:number}){const ref=useRef<InstancedMesh>(null);const rows=Math.ceil(width/.55),cols=Math.ceil(depth/.26),count=rows*cols;
+ const geometry=useMemo(()=>{const shape=new Shape();shape.moveTo(-.14,0);shape.absarc(0,0,.14,Math.PI,0,true);shape.lineTo(.115,0);shape.absarc(0,0,.115,0,Math.PI,false);shape.closePath();const g=new ExtrudeGeometry(shape,{depth:.62,bevelEnabled:false,curveSegments:8});g.rotateY(Math.PI/2);return g;},[]);
+ useLayoutEffect(()=>{const o=new Object3D();for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const i=r*cols+c;o.position.set(-width/2+r*.55,.10+r*.004,-depth/2+c*.26);o.rotation.set(0,0,0);o.updateMatrix();ref.current!.setMatrixAt(i,o.matrix);ref.current!.setColorAt(i,new Color(['#c88259','#b9704e','#d29469','#a9694b','#c78c60'][(i*7+r)%5]));}ref.current!.instanceMatrix.needsUpdate=true;},[count,width,depth,rows,cols]);return <instancedMesh ref={ref} args={[geometry,undefined,count]} castShadow receiveShadow><meshStandardMaterial {...surfaces.plaster} roughness={.94} side={DoubleSide}/></instancedMesh>;
+}
+export function TiledRoof({width,depth}:{width:number;depth:number}){return <group position={[0,3.8,0]}>{[-1,1].map(side=><group key={side} position={[side*width/4,0,0]} rotation={[0,0,-side*.27]}><Box size={[width/2+.5,.12,depth+.7]} color="#755443" surface="wood"/><Tiles width={width/2+.5} depth={depth+.7}/><Box position={[side*width/4,-.02,0]} size={[.15,.22,depth+.8]} color="#955e40"/></group>)}<Beam a={[0,width*.07+.08,-depth/2-.5]} b={[0,width*.07+.08,depth/2+.5]} r={.16} color="#b97955"/></group>;}
