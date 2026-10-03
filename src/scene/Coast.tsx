@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, Group, Shape } from 'three';
+import { CanvasTexture, Color, DoubleSide, Group, Shape, SRGBColorSpace } from 'three';
 import { Box, Beam } from './Primitives';
 import { journey } from '../data/journey';
 import { NaturalTerrain, BeachStones, Cays } from './Terrain';
@@ -14,8 +14,19 @@ export function Island(){
  {[-1,1].map((s,i)=><mesh key={i} position={[s*110,-1,-170-i*35]} scale={[65,9,15]}><sphereGeometry args={[1,24,10]}/><meshStandardMaterial color={new Color('#83a8a4')} roughness={1}/></mesh>)}
  </>;
 }
-export function Peneros(){return <>{BOATS.map((b,i)=><Penero key={i} x={b.x} z={b.z} ang={b.ang} hull={b.hull} trim={b.trim} phase={i*1.7}/>)}</>;}
-export function Penero({x,z,ang,hull:hullColor,trim,phase}:{x:number;z:number;ang:number;hull:string;trim:string;phase:number}){
+export function Peneros(){return <>{BOATS.map((b,i)=><Penero key={i} x={b.x} z={b.z} ang={b.ang} hull={b.hull} trim={b.trim} name={b.name} paint={b.paint} phase={i*1.7}/>)}</>;}
+// Hand-painted boat name, as on the peñeros of Margarita and Choroní.
+function nameTexture(name:string,paint:string){
+ const c=document.createElement('canvas');c.width=512;c.height=128;const k=c.getContext('2d')!;
+ k.font='76px "Caveat Brush", "Segoe Script", cursive';k.textAlign='center';k.textBaseline='middle';
+ k.fillStyle='rgba(0,0,0,.25)';k.fillText(name,259,70);k.fillStyle=paint;k.fillText(name,256,66);
+ const t=new CanvasTexture(c);t.colorSpace=SRGBColorSpace;t.anisotropy=4;
+ // The web font may arrive after the first draw; repaint once it is ready.
+ document.fonts?.load('76px "Caveat Brush"').then(()=>{k.clearRect(0,0,512,128);k.fillStyle='rgba(0,0,0,.25)';k.fillText(name,259,70);k.fillStyle=paint;k.fillText(name,256,66);t.needsUpdate=true;}).catch(()=>{});
+ return t;
+}
+export function Penero({x,z,ang,hull:hullColor,trim,phase,name,paint='#fbf7ee'}:{x:number;z:number;ang:number;hull:string;trim:string;phase:number;name?:string;paint?:string}){
+ const label=useMemo(()=>name?nameTexture(name,paint):null,[name,paint]);
  const ref=useRef<Group>(null),time=useRef(phase);
  const hull=useMemo(()=>{const s=new Shape();s.moveTo(0,-2);s.bezierCurveTo(-.8,-1.6,-.8,.8,-.52,1.65);s.quadraticCurveTo(0,1.8,.52,1.65);s.bezierCurveTo(.8,.8,.8,-1.6,0,-2);return s;},[]);
  useFrame((_,dt)=>{if(journey.paused||journey.reduced)return;time.current+=dt;if(ref.current){ref.current.position.y=Math.sin(time.current*.9)*.045-.04;ref.current.rotation.z=Math.sin(time.current*.65)*.025;}});
@@ -24,6 +35,7 @@ export function Penero({x,z,ang,hull:hullColor,trim,phase}:{x:number;z:number;an
  <mesh rotation={[Math.PI/2,0,0]} position={[0,.05,0]} scale={[.83,.89,1]}><shapeGeometry args={[hull]}/><meshStandardMaterial color={trim} side={2}/></mesh>
  {[-.9,0,.9].map(z=><Box key={z} position={[0,.12,z]} size={[1.12,.09,.26]} color="#f0d9a4"/>)}
  {[-1,1].map(s=>[-1,1].map(z=><Beam key={`${s}${z}`} a={[s*.55,.1,z]} b={[s*.55,1.45,z]} r={.026} color="#f2dca9"/>))}
+ {label&&[-1,1].map(s=><mesh key={s} position={[s*.8,-.2,.25]} rotation={[0,s*Math.PI/2,0]}><planeGeometry args={[1.5,.375]}/><meshStandardMaterial map={label} transparent side={DoubleSide} roughness={.9} polygonOffset polygonOffsetFactor={-2}/></mesh>)}
  <Box position={[0,1.48,0]} size={[1.4,.065,2.4]} rotation={[0,0,.025]} color="#f0dfb6"/><Box position={[0,.2,1.65]} size={[.32,.55,.32]} color="#4c5b51"/>
  </group>;
 }

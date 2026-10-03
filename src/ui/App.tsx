@@ -4,7 +4,8 @@ import { chapterAt, chapters, goTo, journey } from '../data/journey';
 import { money, productKeys, services, storeItems } from '../data/store';
 import { useProgress } from '@react-three/drei';
 import { setAmbientSound } from './sound';
-import { SignalGame } from './SignalGame';
+import { MangoGame } from './MangoGame';
+import { CatchToast } from './CatchToast';
 class WorldBoundary extends Component<{children:ReactNode},{error:boolean}>{state={error:false};static getDerivedStateFromError(){return {error:true};}render(){return this.state.error?<div className="fallback"><h1>A little pause in paradise.</h1><p>The 3D world could not start. Enable hardware acceleration, then reload.</p><button onClick={()=>location.reload()}>Try again</button></div>:this.props.children;}}
 const details:Record<string,{label:string;title:string;copy:string;foot:string}>={
  games:{label:'GAMES / WORK IN PROGRESS',title:'A place for play.',copy:'We make worlds you can get lost in, and little moments that stay with you. This coastal arcade is the first home for our future game projects.',foot:'Project showcase coming soon. No game releases are announced here.'},
@@ -46,7 +47,7 @@ export function App(){
  const item=modal?.startsWith('item:')?storeItems[modal.slice(5)]:null,itemKey=modal?.slice(5)||'';
  const info=modal&&!item?details[modal]:null;
  return <>
- <WorldBoundary><Experience onReady={onReady} onSelect={select}/></WorldBoundary>
+ <WorldBoundary><Experience onReady={onReady} onSelect={select}/><CatchToast onOpen={open}/></WorldBoundary>
  <div className={`loader ${ready?'loaded':''}`} aria-hidden={ready}><img className="loader-symbol" src="/brand/squeezy.png" alt="Squeezy Labs"/><div className="loader-mark">squeezy<span>®</span></div><p>Loading the world… {Math.round(ready?100:assetProgress)}%</p><div className="load-line" role="progressbar" aria-label="World loading" aria-valuenow={Math.round(ready?100:assetProgress)} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${ready?100:assetProgress}%`}}/></div><span className="loader-note">A little closer to somewhere good.</span></div>
  <div className="vignette"/>
  {ready&&greet&&!dismissed&&progress<.105&&<aside className="transmission" aria-label="Mensaje de Squeezy"><div><span className="signal-dot"/> TRANSMISIÓN / SQUEEZY LABS<button aria-label="Cerrar bienvenida" onClick={()=>setDismissed(true)}>×</button></div><p>Hola, terrícola.<br/><em>Bienvenido a mi mundo.</em></p><button className="text-button" onClick={()=>goTo(chapters[1].progress)}>Vamos a explorar ↗</button></aside>}
@@ -65,7 +66,7 @@ export function App(){
   :<div className="item-row"><button className="pill" onClick={()=>open('shop')}>See the shelf <span>↗</span></button><button className="text-button dark" onClick={()=>open('contact')}>Order custom work ↗</button></div>}
   {item.kind==='product'&&count>0&&<button className="text-button dark" onClick={()=>open('cart')}>Go to your tab ({count}) ↗</button>}</>}
  {info&&<><p className="eyebrow">{info.label}</p><h2>{info.title}</h2><p>{info.copy}</p>
-  {modal==='games'&&<SignalGame/>}
+  {modal==='games'&&<MangoGame/>}
   {modal==='experiments'&&<button className={`squeeze-toy ${squeezed?'squeezed':''}`} onClick={()=>{setSqueezed(true);setTimeout(()=>setSqueezed(false),650);}} aria-label="Squeeze the experiment">✳</button>}
   {modal==='shop'&&<><p className="prototype-note">Catálogo de demostración. Los precios son ilustrativos; ningún producto está a la venta todavía.</p><div className="shelf">{productKeys.map(k=>{const p=storeItems[k],pk=p.pack!;return <article key={k} className="shelf-item"><div className="pack" style={{background:pk.bg,color:pk.fg}}><small>{pk.top}</small><span className="pt">{pk.t1}<i>{pk.t2}</i></span><span className="sticker">{money(p.price||0)}</span></div><h3>{p.name}</h3><p>{p.desc}</p><button className="pill" onClick={()=>add(k)}>{cart[k]?`On tab (${cart[k]})`:'Add to tab'} <span>+</span></button></article>;})}</div>
    <div className="board"><h3>Encargos del día</h3><ul>{services.map(s=><li key={s.name}><b>{s.name}</b><span>{s.price}</span><small>{s.note}</small></li>)}</ul><button className="pill" onClick={()=>open('contact')}>Write it in la libreta <span>↗</span></button></div>

@@ -11,10 +11,10 @@ export const CAYS: Cay[] = [
 // Shallow sandbars from the main island to two cays: [x1, z1, x2, z2].
 export const SANDBARS: [number, number, number, number][] = [[27, 5, 38, -1], [-19, 15, -29, 19]];
 export const BOATS = [
-  { x: -4, z: -12.5, ang: 1.1, hull: '#da8a51', trim: '#467e86' },
-  { x: 36, z: 17, ang: .4, hull: '#2f6f9e', trim: '#f2c14e' },
-  { x: 5, z: 38, ang: 1.9, hull: '#f2c14e', trim: '#c4312b' },
-  { x: -27, z: 4, ang: -.6, hull: '#3e9a95', trim: '#f4f1e8' },
+  { x: -4, z: -12.5, ang: 1.1, hull: '#da8a51', trim: '#467e86', name: 'La Chamita', paint: '#fbf7ee' },
+  { x: 36, z: 17, ang: .4, hull: '#2f6f9e', trim: '#f2c14e', name: 'Mi Bendición', paint: '#f2c14e' },
+  { x: 5, z: 38, ang: 1.9, hull: '#f2c14e', trim: '#c4312b', name: 'Dios Me Guíe', paint: '#c4312b' },
+  { x: -27, z: 4, ang: -.6, hull: '#3e9a95', trim: '#f4f1e8', name: 'El Pana', paint: '#fbf7ee' },
 ];
 const wobble = (a: number) => 1 + Math.sin(a * 3 + .4) * .04 + Math.sin(a * 7) * .023;
 // Point on the main island at angle a and ring t (1 = outer terrain ring, the waterline sits near .94).

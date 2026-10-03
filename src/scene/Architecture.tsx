@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { Group, Mesh, Vector3 } from 'three';
 import { RoundedBox } from '@react-three/drei';
 import { Box, Beam } from './Primitives';
+import { flat, PALETTE } from './flat';
+import { ArcadeScreen, ProjectScreen } from './Screens';
 import { Shrub } from './Vegetation';
 import { journey } from '../data/journey';
 import { ColonialHouse } from './Colonial';
@@ -17,29 +19,18 @@ function Shutter({position,color='#5b9d94'}:{position:V;color?:string}){return <
 // Studio cottages in the coastal colonial style, with an open portico so the arcade and desk stay visible.
 function Cottage({position,color,width=5,depth=4,zocalo='#2f6f9e'}:{position:V;color:string;width?:number;depth?:number;zocalo?:string}){return <group position={position}>
  <ColonialHouse position={[0,0,depth/2]} width={width} depth={depth} wall={color} zocalo={zocalo} portico seed={Math.round(width*10)}/>
- <mesh position={[0,.32,.2]} rotation={[-Math.PI/2,0,0]} receiveShadow><planeGeometry args={[width*.7,depth*.62]}/><meshStandardMaterial color="#ab8961" roughness={1}/></mesh>
- {Array.from({length:9},(_,i)=><Box key={`rug${i}`} position={[-width*.32+i*width*.08,.33,.2]} size={[.03,.008,depth*.6]} color="#ded0a4"/>)}
- <Beam a={[0,3.45,.4]} b={[0,2.95,.4]} r={.018} color="#3d5145"/><mesh position={[0,2.85,.4]}><sphereGeometry args={[.2,12,8]}/><meshStandardMaterial color="#efe4b0" emissive="#efcc74" emissiveIntensity={.2} roughness={.8}/></mesh>
+ <mesh position={[0,.32,.2]} rotation={[-Math.PI/2,0,0]} receiveShadow><planeGeometry args={[width*.7,depth*.62]}/><meshStandardMaterial color="#c9a678" roughness={1} flatShading/></mesh>
  </group>;}
 function Chair({position,rotation=0}:{position:V;rotation?:number}){return <group position={position} rotation={[0,rotation,0]}>{[-1,1].map(s=>[-1,1].map(z=><Box key={`${s}${z}`} position={[s*.3,.4,z*.29]} size={[.055,.8,.055]} color="#72543e"/>))}<Box position={[0,.76,0]} size={[.72,.08,.65]} color="#ab7c50"/>{[-1,1].map(s=><Box key={s} position={[s*.3,1.02,-.29]} size={[.05,.9,.06]} color="#72543e"/>)}{[0,1,2].map(i=><Box key={i} position={[0,1.06+i*.14,-.29]} size={[.65,.10,.04]} color="#ab7c50"/>)}</group>;}
 export function StudioDetails(){return <>
- <group position={[-4.4,0,7]} rotation={[0,-.3,0]}>
- <mesh position={[0,.88,0]} castShadow receiveShadow><cylinderGeometry args={[.75,.75,.09,32]}/><meshStandardMaterial color="#6b9c91" roughness={.8}/></mesh>
- <Beam a={[-.4,0,-.4]} b={[.4,.85,.4]} r={.035} color="#525f49"/><Beam a={[.4,0,-.4]} b={[-.4,.85,.4]} r={.035} color="#525f49"/>
- <Box position={[.14,.95,0]} size={[.4,.05,.29]} rotation={[0,.3,0]} color="#dcb376"/>
- <mesh position={[-.3,1.02,.2]} castShadow><cylinderGeometry args={[.09,.07,.17,14]}/><meshStandardMaterial color="#ede2bc" roughness={.7}/></mesh>
- <Chair position={[1.2,0,.5]} rotation={-1.9}/><Chair position={[-1.2,0,.3]} rotation={1.7}/>
- </group>
- <Chair position={[6,.34,-1.15]} rotation={Math.PI}/>
- <group position={[-8.5,.36,-1.7]}><Box position={[0,.65,0]} size={[.9,.08,.7]} color="#b59466"/>{[-1,1].map(s=><Box key={s} position={[s*.35,.3,0]} size={[.08,.6,.5]} color="#796544"/>)}<Box position={[0,.75,0]} size={[.4,.08,.3]} color="#74a098"/><Box position={[.02,.82,.01]} size={[.34,.05,.27]} color="#dcb37c"/></group>
  <Clothesline x0={10.3} x1={13.1} z={-3.7} colors={['#2e8d86','#c4dceb']}/>
  </>;}
-function Pot({position,scale=1}:{position:V;scale?:number}){return <group position={position} scale={scale}><mesh position={[0,.35,0]} castShadow><cylinderGeometry args={[.4,.26,.7,14]}/><meshStandardMaterial color="#b96e4e" roughness={.92}/></mesh><Shrub position={[0,.6,0]} scale={.55} seed={7}/></group>;}
+function Pot({position,scale=1}:{position:V;scale?:number}){return <group position={position} scale={scale}><mesh position={[0,.35,0]} castShadow material={flat(PALETTE.terracotta)}><cylinderGeometry args={[.4,.26,.7,8]}/></mesh><Shrub position={[0,.6,0]} scale={.55} seed={7}/></group>;}
 function Arcade({onSelect}:{onSelect:()=>void}){return <group position={[-7,.33,.3]} rotation={[0,.16,0]}>
- <RoundedBox args={[1.25,1.9,.85]} radius={.1} position={[0,.95,0]} castShadow><meshStandardMaterial color="#de8c69" roughness={.6}/></RoundedBox>
+ <RoundedBox args={[1.25,1.9,.85]} radius={.08} smoothness={2} position={[0,.95,0]} castShadow material={flat('#de8c69')}/>
  <Box position={[0,1.5,.46]} size={[1.01,.77,.07]} color="#263f38"/>
- <mesh position={[0,1.51,.505]} onClick={e=>{e.stopPropagation();onSelect();}} onPointerOver={()=>document.body.style.cursor='pointer'} onPointerOut={()=>document.body.style.cursor='auto'}><planeGeometry args={[.86,.6]}/><meshBasicMaterial color="#d6f585"/></mesh>
- {[-1,1].map(i=><Box key={i} position={[i*.18,1.58,.55]} size={[.11,.13,.04]} color="#284936"/>)}<Box position={[0,1.37,.55]} size={[.3,.035,.04]} color="#284936"/>
+ <ArcadeScreen size={[.86,.6]} position={[0,1.51,.505]} onSelect={onSelect}/>
+ 
  <Box position={[0,.91,.57]} size={[1.12,.15,.5]} rotation={[.12,0,0]} color="#f4ba80"/>
  <Beam a={[-.3,1,.66]} b={[-.3,1.17,.66]} r={.035} color="#263f38"/><mesh position={[-.3,1.2,.66]}><sphereGeometry args={[.075,12,8]}/><meshStandardMaterial color="#496b56"/></mesh>
  {[0,1,2].map(i=><mesh key={i} position={[.1+i*.16,1,.65]} rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.055,.055,.04,12]}/><meshStandardMaterial color={i===1?'#629c95':'#f7e9be'}/></mesh>)}
@@ -50,9 +41,8 @@ export function WebAppsArea({onSelect}:{onSelect:()=>void}){return <>
  <group position={[6,.4,-2.2]}>
  <Box position={[0,.95,0]} size={[3.2,.15,1.1]} color="#b58a5d"/>{[-1,1].map(s=><Box key={s} position={[s*1.3,.46,0]} size={[.12,.95,.65]} color="#6e6145"/>)}
  <Box position={[0,1.6,0]} size={[1.65,1.05,.12]} color="#385d52"/><Box position={[0,1.06,0]} size={[.13,.3,.12]} color="#385d52"/>
- <mesh position={[0,1.6,.075]} onClick={onSelect} onPointerOver={()=>document.body.style.cursor='pointer'} onPointerOut={()=>document.body.style.cursor='auto'}><planeGeometry args={[1.48,.88]}/><meshBasicMaterial color="#f5edcc"/></mesh>
- <Box position={[-.39,1.6,.09]} size={[.52,.65,.01]} color="#a4c1a4"/>{[0,1,2].map(i=><Box key={i} position={[.28,1.82-i*.18,.1]} size={[.56,.055,.01]} color={i===0?'#d98c67':'#8aa590'}/>)}
- <Box position={[1.15,1.35,.18]} size={[.38,.6,.08]} color="#385d52"/><Box position={[1.15,1.35,.23]} size={[.3,.49,.01]} color="#c6d68c"/>
+ <ProjectScreen size={[1.48,.88]} position={[0,1.6,.075]} cycle onSelect={onSelect}/>
+ <Box position={[1.15,1.35,.18]} size={[.38,.6,.08]} color="#385d52"/><ProjectScreen size={[.3,.49]} position={[1.15,1.35,.23]} reel={2}/>
  </group><Fabric position={[3.65,1.95,-.8]}/><Pot position={[9.3,0,-.9]} scale={1.3}/>
  </>;}
 export function CoastalEntrance(){return <>

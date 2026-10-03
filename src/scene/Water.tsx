@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector2, Vector4 } from 'three';
+import { ShaderMaterial, Vector2, Vector4 } from 'three';
 import { journey } from '../data/journey';
 import { BOATS, CAYS, MAIN, SANDBARS } from '../data/world';
 import { sky } from './daylight';
@@ -9,6 +9,7 @@ import { waterFragment, waterVertex } from '../shaders/water';
 export function ClearWater() {
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
+    uNight: sky.night,
     uSun: { value: sky.sunDir },
     uFog: { value: sky.horizon },
     uSkyRef: { value: sky.horizon },
@@ -19,8 +20,10 @@ export function ClearWater() {
     uBoats: { value: BOATS.map(b => new Vector4(b.x, b.z, b.ang, 0)) },
   }), []);
   useFrame((_, dt) => { if (!journey.paused && !journey.reduced) uniforms.uTime.value += dt; });
-  return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.31, 0]}>
-    <planeGeometry args={[900, 900]} />
-    <shaderMaterial vertexShader={waterVertex} fragmentShader={waterFragment} uniforms={uniforms} />
-  </mesh>;
+  const material = useMemo(() => new ShaderMaterial({ vertexShader: waterVertex, fragmentShader: waterFragment, uniforms }), [uniforms]);
+  // A finely tessellated sheet around the archipelago carries the faceted swell; a flat sheet beneath it reaches the horizon.
+  return <>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6, -.31, 10]} material={material}><planeGeometry args={[150, 130, 96, 84]} /></mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.42, 0]} material={material}><planeGeometry args={[900, 900]} /></mesh>
+  </>;
 }

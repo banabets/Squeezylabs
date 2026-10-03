@@ -1,4 +1,3 @@
-import { foliageMap } from './Botanical';
 import { useMemo } from 'react';
 import { BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshDepthMaterial, MeshStandardMaterial, Object3D, Quaternion, RGBADepthPacking, Shape, ShapeGeometry, SphereGeometry, Vector3, type Material } from 'three';
 import { addWind } from './wind';
@@ -38,7 +37,7 @@ function materials() {
   const fruitGeo = new SphereGeometry(.1, 12, 9); fruitGeo.scale(1, 1.32, .88);
   const wind = { base: 2.5, amp: .012, flutter: .012 };
   shared = {
-    leaf: addWind(new MeshStandardMaterial({map:foliageMap(), roughness: .62, side: DoubleSide }), wind),
+    leaf: addWind(new MeshStandardMaterial({ roughness: .8, flatShading: true, side: DoubleSide }), wind),
     fruit: addWind(new MeshStandardMaterial({ roughness: .4 }), { ...wind, flutter: 0 }),
     leafDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking, side: DoubleSide }), wind),
     fruitDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking }), { ...wind, flutter: 0 }),
@@ -49,7 +48,7 @@ function materials() {
   return shared;
 }
 
-const greens = ['#91aa74', '#adc28c', '#819b69', '#bdcc97', '#829a63'].map(c => new Color(c));
+const greens = ['#3f8f45', '#4a9444', '#5aa64a', '#367d3c', '#57a04c'].map(c => new Color(c));
 const flushColors = ['#7e3426', '#9a4a30', '#b26a40', '#8f5a34'].map(c => new Color(c));
 const fruitColors = ['#6f9a34', '#a9b23a', '#e6b230', '#ef8a2a', '#d4532c'].map(c => new Color(c));
 const noRaycast = () => {};

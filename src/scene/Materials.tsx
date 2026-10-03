@@ -1,7 +1,24 @@
-import { useMemo } from 'react';
-import { useTexture } from '@react-three/drei';
-import { RepeatWrapping, SRGBColorSpace, Texture, Vector2 } from 'three';
+import { MeshStandardMaterial, Texture, Vector2 } from 'three';
 export type Surface='sand'|'plaster'|'wood'|'bark';
 export const surfaces:Partial<Record<Surface,{map:Texture;normalMap:Texture;roughnessMap:Texture;normalScale:Vector2}>>={};
-const paths=['coast_sand_01','white_plaster_02','weathered_brown_planks','palm_tree_bark'].flatMap(id=>['Diffuse','nor_gl','Rough'].map(c=>`/materials/${id}_${c}.jpg`));
-export function useMaterials(){const textures=useTexture(paths);useMemo(()=>{(['sand','plaster','wood','bark'] as Surface[]).forEach((key,i)=>{const [map,normalMap,roughnessMap]=textures.slice(i*3,i*3+3);for(const t of [map,normalMap,roughnessMap]){t.wrapS=t.wrapT=RepeatWrapping;t.anisotropy=8;}map.colorSpace=SRGBColorSpace;surfaces[key]={map,normalMap,roughnessMap,normalScale:new Vector2(key==='bark'?.85:key==='sand'?.38:.65,key==='bark'?.85:key==='sand'?.38:.65)};});},[textures]);}
+// Diorama direction: photo textures are no longer loaded. `surfaces` stays empty so legacy
+// `...surfaces.x` spreads fall back to flat colors. Kept as a hook so callers need no change.
+export function useMaterials(){}
+
+// Flat coral sand. A per-vertex `wet` attribute darkens and polishes the strip at the waterline.
+const sandMats=new Map<string,MeshStandardMaterial>();
+export function sandMaterial(color:string){
+ let m=sandMats.get(color);if(m)return m;
+ m=new MeshStandardMaterial({color,roughness:1,flatShading:true});
+ m.onBeforeCompile=shader=>{
+  shader.vertexShader=shader.vertexShader
+   .replace('#include <common>','#include <common>\nattribute float wet;\nvarying float vWet;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\nvWet=wet;');
+  shader.fragmentShader=shader.fragmentShader
+   .replace('#include <common>','#include <common>\nvarying float vWet;')
+   .replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb*=mix(vec3(1.),vec3(.74,.77,.78),vWet);')
+   .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.32,vWet);');
+ };
+ m.customProgramCacheKey=()=>'coral-sand-v2';
+ sandMats.set(color,m);return m;
+}
