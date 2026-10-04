@@ -78,10 +78,12 @@ void main(){
   vec2 rp=p*2.2+vec2(t*.35,-t*.22);float e=.06;
   float r0=fbm(rp),rx=fbm(rp+vec2(e,0.)),rz=fbm(rp+vec2(0.,e));
   g+=vec2(rx-r0,rz-r0)/e*.05*fade;
+  #ifndef LOW_WATER
   vec2 cp=mat2(.8,-.6,.6,.8)*p*5.5+vec2(-t*.6,t*.45);float c0=noise(cp),cx=noise(cp+vec2(e,0.)),cz=noise(cp+vec2(0.,e));
   g+=vec2(cx-c0,cz-c0)/e*.022*fade*fade;
   vec2 cq=mat2(.5,.87,-.87,.5)*p*12.+vec2(t*.9,t*.3);float q0=noise(cq),qx=noise(cq+vec2(e,0.)),qz=noise(cq+vec2(0.,e));
   g+=vec2(qx-q0,qz-q0)/e*.01*fade*fade*fade;
+  #endif
   vec3 N=normalize(vec3(-g.x*calm,1.,-g.y*calm));
   vec2 slope=N.xz*.6;
   vec2 bp=p+slope*depth*.45;
@@ -130,7 +132,11 @@ void main(){
   // in linear HDR afterwards so bloom picks it up.
   vec3 lin=pow(col,vec3(mix(2.2,1.65,uNight)));
   float sd=max(dot(R,normalize(uSun)),0.);
+  #ifdef LOW_WATER
+  float glint=0.;
+  #else
   float glint=step(.985,noise(p*9.+N.xz*40.+t*2.))*pow(sd,40.)*3.*fade;
+  #endif
   lin+=uSunCol*(glint+pow(sd,1400.)*14.*(1.-uNight*.7)+pow(sd,120.)*.35*(1.-uNight))*(1.-cloud*.8)*(1.-smoothstep(uFogRange.x,uFogRange.y*1.4,dist)*.7);
   gl_FragColor=vec4(lin,1.);
 }`;

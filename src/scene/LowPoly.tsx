@@ -6,6 +6,7 @@ import { journey } from '../data/journey';
 import { leafGeometry, rng } from './Mango';
 import { applyPbr, broadTexture, frondTexture } from './realism';
 import { addWind } from './wind';
+import { LOW } from '../quality';
 
 // Realistic coconut palms and leafy shrubs. The file keeps its old name and exports so every caller
 // (garden, pots, roofs, cays) picks up the new look without changes.
@@ -158,9 +159,9 @@ export function shrubGeometry(seed: number, flowers: boolean) {
   for (let i = 0; i < lobes; i++) {
     const a = i / lobes * Math.PI * 2 + rnd(seed + i), r = i === 0 ? 0 : .36 + rnd(seed + i * 5) * .2;
     const c = new Vector3(Math.cos(a) * r, .42 + (i === 0 ? .22 : rnd(seed + i * 2) * .12), Math.sin(a) * r), rad = .42 + rnd(seed + i * 3) * .16;
-    for (let k = 0; k < 170; k++) leafAt(R, c, rad, leafGreens[Math.floor(R() * 5)], .14 + R() * .06, parts);
+    for (let k = 0; k < (LOW ? 95 : 170); k++) leafAt(R, c, rad, leafGreens[Math.floor(R() * 5)], .14 + R() * .06, parts);
     // Inner leaves fill the lobe so the bush reads as a dense mass, not a hollow shell.
-    for (let k = 0; k < 90; k++) leafAt(R, c, rad, leafGreens[Math.floor(R() * 5)], .16 + R() * .06, parts, true);
+    for (let k = 0; k < (LOW ? 30 : 90); k++) leafAt(R, c, rad, leafGreens[Math.floor(R() * 5)], .16 + R() * .06, parts, true);
     if (flowers) for (let k = 0; k < 44; k++) leafAt(R, c, rad * 1.04, bracts[Math.floor(R() * 4)], .1 + R() * .04, parts);
   }
   g = mergeGeometries(parts)!;

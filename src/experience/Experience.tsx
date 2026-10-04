@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Preload } from '@react-three/drei';
 import { memo, Suspense, useRef } from 'react';
-import { PCFSoftShadowMap, ACESFilmicToneMapping, Vector3, type DirectionalLight, type HemisphereLight } from 'three';
+import { PCFShadowMap, PCFSoftShadowMap, ACESFilmicToneMapping, Vector3, type DirectionalLight, type HemisphereLight } from 'three';
 import { useMaterials } from '../scene/Materials';
 import { ClearWater } from '../scene/Water';
 import { Grounding } from '../scene/Grounding';
@@ -16,6 +16,7 @@ import { FishingPier } from '../scene/Pier';
 import { Fireflies, Lighthouse, NightLights } from '../scene/Night';
 import { FishingSpot } from '../scene/Fishing';
 import { RealBirds } from '../scene/RealBirds';
+import { LOW } from '../quality';
 import { Atarraya, BeachToldo, Chinchorro, Papagayos, RaspadoCart, VillageSigns } from '../scene/Venezuela';
 import { FoliageLod } from '../scene/FoliageLod';
 import { windUniform } from '../scene/wind';
@@ -44,10 +45,10 @@ function Daylight(){
   if(Math.abs(sc.right-half)>.5){sc.left=sc.bottom=-half;sc.right=sc.top=half;sc.updateProjectionMatrix();}
  });
  return <><hemisphereLight ref={hemi} args={['#cfe3f2','#c9b896',.72]}/>
- <directionalLight ref={sun} position={[24,16,18]} intensity={3.1} color="#ffe2bd" castShadow shadow-mapSize={[4096,4096]} shadow-camera-left={-36} shadow-camera-right={36} shadow-camera-top={36} shadow-camera-bottom={-36} shadow-camera-near={1} shadow-camera-far={120} shadow-bias={-.0003} shadow-normalBias={.025}/></>;
+ <directionalLight ref={sun} position={[24,16,18]} intensity={3.1} color="#ffe2bd" castShadow shadow-mapSize={LOW?[1024,1024]:[4096,4096]} shadow-camera-left={-36} shadow-camera-right={36} shadow-camera-top={36} shadow-camera-bottom={-36} shadow-camera-near={1} shadow-camera-far={120} shadow-bias={-.0003} shadow-normalBias={.025}/></>;
 }
 export const Experience=memo(function Experience({onReady,onSelect}:{onReady:()=>void;onSelect:(name:string)=>void}){
- return <div className="world" aria-label="Interactive Caribbean world"><Canvas shadows={{type:PCFSoftShadowMap}} dpr={[1,1.5]} camera={{position:[0,3.2,16],fov:53,near:.12,far:900}} gl={{antialias:false,stencil:false,powerPreference:'high-performance',toneMapping:ACESFilmicToneMapping,toneMappingExposure:1.05}} fallback={<div className="fallback">This world needs WebGL. Try a browser with hardware acceleration enabled.</div>}>
+ return <div className="world" aria-label="Interactive Caribbean world"><Canvas shadows={{type:LOW?PCFShadowMap:PCFSoftShadowMap}} dpr={LOW?[.75,1]:[1,1.5]} camera={{position:[0,3.2,16],fov:53,near:.12,far:900}} gl={{antialias:false,stencil:false,powerPreference:'high-performance',toneMapping:ACESFilmicToneMapping,toneMappingExposure:1.05}} fallback={<div className="fallback">This world needs WebGL. Try a browser with hardware acceleration enabled.</div>}>
  <color attach="background" args={['#cfe6ea']}/><fog attach="fog" args={['#cfe6ea',80,320]}/>
  <Atmosphere/><NightLights/>
  <Daylight/>

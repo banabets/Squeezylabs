@@ -3,6 +3,7 @@ import { BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Floa
 import { addWind } from './wind';
 import { applyPbr, lanceTexture } from './realism';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { LOW } from '../quality';
 
 export function rng(seed: number) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -87,7 +88,7 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1, k
   for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283 + R() * .5; grow(top, new Vector3(Math.cos(a) * .8, 1, Math.sin(a) * .8).normalize(), 2.4 + R() * .5, .24, 4); }
 
   let count = 0;
-  for (const tp of tips) { tp.flush = tp.big && R() < .07; tp.n = tp.big ? 88 : 46; count += tp.n; }
+  for (const tp of tips) { tp.flush = tp.big && R() < .07; tp.n = LOW ? (tp.big ? 50 : 26) : (tp.big ? 88 : 46); count += tp.n; }
   const leaves = new InstancedMesh(lanceGeometry, m.leaf, count), o = new Object3D(), u = new Vector3(), v = new Vector3(), ld = new Vector3(), q = new Quaternion(), q2 = new Quaternion();
   let idx = 0;
   const gcd=(a:number,b:number):number=>b?gcd(b,a%b):a;
