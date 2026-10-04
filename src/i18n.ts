@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react';
-// Site language. Spanish for Spanish-speaking browsers, English otherwise; the visitor's choice is remembered.
+// Site language. English by default; the visitor can switch to Spanish and the choice is remembered.
 export type Lang = 'en' | 'es';
 export type Tx = Record<Lang, string>;
 const KEY = 'squeezy-lang';
 const initial = (): Lang => {
   try { const saved = localStorage.getItem(KEY); if (saved === 'en' || saved === 'es') return saved; } catch { /* storage unavailable */ }
-  return navigator.language?.toLowerCase().startsWith('es') ? 'es' : 'en';
+  return 'en';
 };
 let current: Lang = initial();
 const listeners = new Set<() => void>();
