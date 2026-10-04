@@ -23,7 +23,7 @@ const details:Record<string,Detail>={
 const ctaFor:Record<string,{text:Tx;modal:string;pill?:boolean}>={
  'Games':{text:{en:'Meet our playful side',es:'Conoce nuestro lado juguetón'},modal:'games'},
  'Web & apps':{text:{en:'Explore our digital side',es:'Mira nuestro lado digital'},modal:'web'},
- 'La bodega':{text:{en:'Order your project',es:'Encarga tu proyecto'},modal:'contact',pill:true},
+ 'La bodega':{text:{en:'See our work',es:'Ver nuestro trabajo'},modal:'',pill:true},
  'The bigger picture':{text:{en:'Let’s make something',es:'Hagamos algo juntos'},modal:'contact',pill:true},
 };
 // Short interface strings.
@@ -62,7 +62,7 @@ export function App(){
  {ready&&greet&&!dismissed&&progress<.105&&<aside className="transmission" aria-label={t.helloAria}><div><span className="signal-dot"/> LA BODEGA / SQUEEZY LABS<button aria-label={t.closeHello} onClick={()=>setDismissed(true)}>×</button></div><p>{t.hello}<br/><em>{t.helloQ}</em></p><button className="text-button" onClick={()=>open('shop')}>{t.seeShelf} ↗</button></aside>}
  <header className="header"><button className="wordmark logo-only" onClick={()=>goTo(0)} aria-label={t.home}><img className="brand-symbol" src="/brand/squeezy-512.png" alt="Squeezy Labs"/></button><nav aria-label={t.nav}><button onClick={()=>goTo(chapters[1].progress)}>{t.projects}</button><button onClick={()=>goTo(chapters[0].progress)}>Bodega</button><button onClick={()=>open('about')}>{t.about}</button><button className="tab-nav" onClick={()=>open('cart')} aria-label={t.tabAria(count,m(total))}>{t.tab} <b>{count}</b></button><LangToggle lang={lang}/><button className="contact-nav" onClick={()=>open('contact')}>{t.talk} <span>↗</span></button></nav></header>
  <main className="scroll-track" aria-label={t.scrollAria}><div className="chapter-content" key={chapter+lang}><p className="eyebrow">{c.label[lang]}</p><h1>{c.title[lang].split('\n').map((line,i)=><span key={i}>{line}</span>)}</h1><p className="chapter-copy">{c.copy[lang]}</p>
- {cta.pill?<button className="pill" onClick={()=>open(cta.modal)}>{cta.text[lang]} <span>↗</span></button>:<button className="text-button" onClick={()=>open(cta.modal)}>{cta.text[lang]} <span>↗</span></button>}
+ {cta.pill?<button className="pill" onClick={()=>cta.modal?open(cta.modal):goTo(chapters[1].progress)}>{cta.text[lang]} <span>{cta.modal?'↗':'↘'}</span></button>:<button className="text-button" onClick={()=>open(cta.modal)}>{cta.text[lang]} <span>↗</span></button>}
  {c.name==='La bodega'&&<button className="text-button bodega-alt" onClick={()=>open('shop')}>{t.seeShelf} <span>↗</span></button>}
  </div></main>
  <aside className="location"><span className="location-icon">✳</span><div>{lang==='es'?'Algún lugar del Caribe':'Somewhere in the Caribbean'}<small>{t.locSmall}</small></div></aside>
