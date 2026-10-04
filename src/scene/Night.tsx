@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, Points, PointsMaterial } from 'three';
+import { AdditiveBlending, BufferGeometry, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, Points, PointsMaterial } from 'three';
 import { journey } from '../data/journey';
 import { sky } from './daylight';
 import { flat, lampGlass, nightGlass } from './flat';
@@ -23,7 +23,9 @@ export function Fireflies() {
     const R = rng(23), pos: number[] = [];
     for (let i = 0; i < 140; i++) { const [x, z] = mainPoint(R() * Math.PI * 2, .25 + R() * .6); pos.push(x, .6 + R() * 2.2, z); }
     const g = new BufferGeometry(); g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-    const material = new PointsMaterial({ color: '#e9ff8a', size: .14, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
+    // A soft round glow per firefly; without a map, points render as hard squares.
+    const glow = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const k = c.getContext('2d')!, g = k.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.25, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)'); k.fillStyle = g; k.fillRect(0, 0, 64, 64); return new CanvasTexture(c); })();
+    const material = new PointsMaterial({ color: '#e9ff8a', map: glow, size: .1, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
     const points = new Points(g, material); points.raycast = () => {};
     return { points, base: Float32Array.from(pos), material };
   }, []);
@@ -53,9 +55,13 @@ export function Lighthouse() {
     const gallery = new Mesh(new CylinderGeometry(.6, .6, .12, 10), flat('#24413f')); gallery.position.y = 5.5; group.add(gallery);
     const lamp = new Mesh(new CylinderGeometry(.34, .34, .55, 10), lampGlass); lamp.position.y = 5.85; group.add(lamp);
     const cap = new Mesh(new ConeGeometry(.5, .5, 10), flat('#d24a3a')); cap.position.y = 6.35; cap.castShadow = true; group.add(cap);
-    const beamMat = new MeshBasicMaterial({ color: '#fff2b0', transparent: true, opacity: 0, depthWrite: false, side: DoubleSide, blending: AdditiveBlending, fog: false });
+    // The beam fades from the lamp to its far end instead of ending in a hard disc.
+    const fade = document.createElement('canvas'); fade.width = 4; fade.height = 128; const fk = fade.getContext('2d')!, fg = fk.createLinearGradient(0, 0, 0, 128);
+    fg.addColorStop(0, '#ffffff'); fg.addColorStop(.35, '#707070'); fg.addColorStop(1, '#000000'); fk.fillStyle = fg; fk.fillRect(0, 0, 4, 128);
+    const beamMat = new MeshBasicMaterial({ color: '#fff2b0', alphaMap: new CanvasTexture(fade), transparent: true, opacity: 0, depthWrite: false, side: DoubleSide, blending: AdditiveBlending, fog: false });
     const cone = new Mesh(new ConeGeometry(2.6, 26, 18, 1, true), beamMat);
-    cone.rotation.z = Math.PI / 2; cone.position.x = -13; cone.raycast = () => {};
+    // Apex at the lamp, the beam widening outward.
+    cone.rotation.z = -Math.PI / 2; cone.position.x = -13; cone.raycast = () => {};
     const beam = new Group(); beam.position.y = 5.85; beam.add(cone); group.add(beam);
     group.traverse(o => { if (o instanceof Mesh && !(o.material instanceof MeshBasicMaterial)) o.raycast = () => {}; });
     return { group, beam, beamMat };

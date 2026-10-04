@@ -35,7 +35,7 @@ export function SandTitle() {
         a*=step(uErase*1.3,grain*.6+vUv.x*.7);
         if(a<.02)discard;
         vec3 groove=vec3(.6,.51,.38)*(1.-.65*uNight);
-        gl_FragColor=vec4(groove,a*.85);
+        gl_FragColor=vec4(pow(groove,vec3(2.2)),a*.85);
       }`,
   }), [texture]);
   const time = useRef(0);

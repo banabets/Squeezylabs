@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../i18n';
 
 // "Atrapa mangos": the game the arcade cabinet advertises. 30 seconds, move the basket with the
 // pointer, a finger or the arrow keys. Ripe mangos +1, golden +3, coconuts −2.
@@ -9,6 +10,7 @@ const writeBest = (n: number) => { try { localStorage.setItem('squeezy-mango-bes
 
 export function MangoGame() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const es = useLang() === 'es';
   const [phase, setPhase] = useState<'idle' | 'play' | 'over'>('idle');
   const [score, setScore] = useState(0), [left, setLeft] = useState(DURATION), [best, setBest] = useState(readBest);
   const game = useRef({ basket: .5, keys: 0, fruits: [] as Fruit[], spawn: 0, score: 0, time: 0, pops: [] as { x: number; y: number; text: string; life: number }[] });
@@ -72,15 +74,15 @@ export function MangoGame() {
   const start = () => { Object.assign(game.current, { basket: .5, keys: 0, fruits: [], spawn: 0, score: 0, time: 0, pops: [] }); setScore(0); setLeft(DURATION); setPhase('play'); };
   const move = (e: React.PointerEvent<HTMLCanvasElement>) => { const r = e.currentTarget.getBoundingClientRect(); game.current.basket = (e.clientX - r.left) / r.width; };
 
-  return <section className="mango-game" aria-label="Atrapa mangos">
+  return <section className="mango-game" aria-label={es ? 'Atrapa mangos' : 'Catch the mangos'}>
     <div className="signal-meta"><span>MANGOS / {String(score).padStart(2, '0')}</span><span>{left}s</span></div>
     <div className="mango-stage">
-      <canvas ref={canvas} width={560} height={340} onPointerMove={move} onPointerDown={move} aria-label="Tablero del juego: mueve la cesta para atrapar mangos" />
+      <canvas ref={canvas} width={560} height={340} onPointerMove={move} onPointerDown={move} aria-label={es ? 'Tablero del juego: mueve la cesta para atrapar mangos' : 'Game board: move the basket to catch mangos'} />
       {phase !== 'play' && <div className="mango-overlay">
-        <p>{phase === 'over' ? `¡${score} ${score === 1 ? 'punto' : 'puntos'}!${score >= best && score > 0 ? ' Nuevo récord.' : ''}` : 'Atrapa los mangos, esquiva los cocos.'}</p>
-        <button className="pill" onClick={start}>{phase === 'over' ? 'Jugar otra vez' : 'Jugar'} ↗</button>
+        <p>{phase === 'over' ? (es ? `¡${score} ${score === 1 ? 'punto' : 'puntos'}!${score >= best && score > 0 ? ' Nuevo récord.' : ''}` : `${score} ${score === 1 ? 'point' : 'points'}!${score >= best && score > 0 ? ' New best.' : ''}`) : (es ? 'Atrapa los mangos, esquiva los cocos.' : 'Catch the mangos, dodge the coconuts.')}</p>
+        <button className="pill" onClick={start}>{phase === 'over' ? (es ? 'Jugar otra vez' : 'Play again') : (es ? 'Jugar' : 'Play')} ↗</button>
       </div>}
     </div>
-    <p role="status">Mango +1 · mango dorado +3 · coco −2. Mueve la cesta con el mouse, el dedo o las flechas. Tu récord: {best}.</p>
+    <p role="status">{es ? 'Mango +1 · mango dorado +3 · coco −2. Mueve la cesta con el mouse, el dedo o las flechas. Tu récord: ' : 'Mango +1 · golden mango +3 · coconut −2. Move the basket with the mouse, a finger or the arrow keys. Your best: '}{best}.</p>
   </section>;
 }

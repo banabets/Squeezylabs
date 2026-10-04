@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import {
-  BoxGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, Group, IcosahedronGeometry, InstancedMesh, LatheGeometry,
+  BoxGeometry, CanvasTexture, CapsuleGeometry, Color, CylinderGeometry, DoubleSide, Group, IcosahedronGeometry, InstancedMesh, LatheGeometry,
   Mesh, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, PointLight, RepeatWrapping, SRGBColorSpace,
-  SphereGeometry, TextureLoader, Vector2, type Material, type MeshStandardMaterialParameters, type Texture,
+  SphereGeometry, TextureLoader, TorusGeometry, Vector2, type Material, type MeshStandardMaterialParameters, type Texture,
 } from 'three';
 import { journey } from '../data/journey';
-import { productKeys, storeItems, type Pack } from '../data/store';
 import { createMangoTree, trunk } from './Mango';
 import { ColonialHouse } from './Colonial';
+import { applyPbr } from './realism';
+import { limewash } from './flat';
+import { foliageDepth, foliageMaterial, shrubGeometry } from './LowPoly';
 import { createCloth, createClothSet } from './Cloth';
 import { simulationVisible } from './visibility';
 import { batchStatic, instanceRepeated } from './batchStatic';
@@ -59,7 +61,8 @@ function buildBodega() {
   plane(7.5, 4, new MeshStandardMaterial({ map: floorTex, roughness: .6 }), 0, .008, -2, -Math.PI / 2);
 
   // Building
-  const yellow = std('#e9b93c', .92), blue = std('#2d6f9e', .85), white = std('#f4f1e8'), mint = std('#cfe6d9', .95);
+  // Facade walls share the stucco-and-weathering material of the colonial houses.
+  const yellow = limewash('#e9b93c'), blue = std('#2d6f9e', .85), white = std('#f4f1e8'), mint = limewash('#cfe6d9');
   box(2, 4.2, .25, yellow, -3, 2.1, -.125); box(2, 4.2, .25, yellow, 3, 2.1, -.125); box(4, 1.5, .25, yellow, 0, 3.45, -.125);
   box(2.02, .85, .27, blue, -3, .425, -.12); box(2.02, .85, .27, blue, 3, .425, -.12);
   box(8.3, .22, .42, white, 0, 4.3, -.1); box(8.3, .35, .3, yellow, 0, 4.58, -.15);
@@ -80,13 +83,16 @@ function buildBodega() {
   const drum = new Mesh(new CylinderGeometry(.16, .16, 4.1, 24), shutterMat); drum.rotation.z = Math.PI / 2; drum.position.set(0, 2.92, .12); drum.castShadow = true; root.add(drum);
   plane(3.95, .42, shutterMat, 0, 2.5, .06).castShadow = true;
   // Window with iron grille and bougainvillea
-  box(1.3, 1.1, .1, std('#23312f', .8), 3, 1.85, 0);
+  // Glazed window: reflective dark glass with a lace half-curtain behind the grille.
+  box(1.3, 1.1, .1, new MeshStandardMaterial({ color: '#1c2a2a', roughness: .06, envMapIntensity: 1.6 }), 3, 1.85, 0);
+  plane(1.24, .46, new MeshStandardMaterial({ color: '#efe8da', roughness: .95, transparent: true, opacity: .9 }), 3, 2.14, .056);
   const iron = std('#26302e', .5, { metalness: .5 });
   for (let i = 0; i < 8; i++) beam([2.42 + i * .165, 1.3, .1], [2.42 + i * .165, 2.4, .1], .012, .012, iron);
   [1.3, 1.85, 2.4].forEach(y => beam([2.36, y, .1], [3.64, y, .1], .012, .012, iron));
   box(1.4, .12, .28, white, 3, 1.24, .12);
-  const flowerMat = std('#c8246b', .8);
-  for (let i = 0; i < 26; i++) { const f = new Mesh(new IcosahedronGeometry(.05 + (i * 37 % 10) * .004, 0), flowerMat); f.position.set(2.4 + (i * 0.618 % 1) * 1.2, 1.36 + (i * .37 % 1) * .18, .18 + (i * .71 % 1) * .08); f.castShadow = true; root.add(f); }
+  // Window box of bougainvillea, built from the same leaf-card foliage as the shrubs.
+  const trough = new Mesh(new BoxGeometry(1.2, .2, .24), new MeshStandardMaterial({ color: '#b8603e', roughness: .85 })); trough.position.set(3, 1.4, .26); trough.castShadow = trough.receiveShadow = true; root.add(trough);
+  [2.62, 3, 3.38].forEach((x, i) => { const b = new Mesh(shrubGeometry(5 + i * 3, i !== 1), foliageMaterial); b.scale.setScalar(.3); b.position.set(x, 1.48, .26); b.castShadow = b.receiveShadow = true; b.customDepthMaterial = foliageDepth; root.add(b); });
   const fioTex = ctex(512, 150, (c, w) => { c.fillStyle = '#fffdf6'; c.fillRect(0, 0, w, 150); text(c, 'Hoy no fío,', '600 52px ' + SANS, '#c4312b', w / 2, 66); text(c, 'mañana sí.', 'italic 400 58px ' + SERIF, '#2d6f9e', w / 2, 126); });
   plane(.9, .27, new MeshStandardMaterial({ map: fioTex, roughness: .8 }), .9, 2.55, -3.99);
   const tube = new Mesh(new CylinderGeometry(.025, .025, 1.8, 10), new MeshStandardMaterial({ color: '#ffffff', emissive: '#fff6e0', emissiveIntensity: 1.2 })); tube.rotation.z = Math.PI / 2; tube.position.set(0, 3.13, -2); root.add(tube);
@@ -96,15 +102,13 @@ function buildBodega() {
   beam([-1.75, 2.7, .25], [-1.75, 2.35, .25], .006, .006, std('#6b5a3f'));
   for (let i = 0; i < 16; i++) { const a = i * 2.399, b = new Mesh(new SphereGeometry(.025, 8, 6), bananaMat), r = .05 + (i % 3) * .02; b.scale.set(1, 5, 1); b.position.set(-1.75 + Math.cos(a) * r, 2.18 + (i % 4) * .05, .25 + Math.sin(a) * r); b.rotation.set(Math.sin(a) * .5, 0, Math.cos(a) * .5); b.castShadow = true; root.add(b); }
 
+  // Plátanos: a heavier green-to-yellow bunch hung beside the cambures.
+  const platano = ['#9bb43c', '#c5c23f', '#e2c446'].map(c => std(c, .6));
+  beam([-1.45, 2.7, .25], [-1.45, 2.4, .25], .006, .006, std('#6b5a3f'));
+  for (let i = 0; i < 12; i++) { const a = i * 2.399, b = new Mesh(new SphereGeometry(.034, 8, 6), platano[i % 3]), r = .06 + (i % 3) * .025; b.scale.set(1, 5.5, 1); b.position.set(-1.45 + Math.cos(a) * r, 2.2 + (i % 4) * .05, .25 + Math.sin(a) * r); b.rotation.set(Math.sin(a) * .45, 0, Math.cos(a) * .45); b.castShadow = true; root.add(b); }
+
   // Packaging
   const packMats = (front: Texture, side: string) => { const s = std(side, .8); return [s, s, s, s, new MeshStandardMaterial({ map: front, roughness: .7 }), s]; };
-  const packTex = (o: Pack & { sun?: boolean }) => ctex(256, 320, (c, w, h) => {
-    c.fillStyle = o.bg; c.fillRect(0, 0, w, h);
-    if (o.sun) { c.fillStyle = '#f2b33d'; c.beginPath(); c.arc(w / 2, h * .7, 46, 0, Math.PI * 2); c.fill(); }
-    text(c, o.top, '500 15px ' + SANS, o.fg, w / 2, 40);
-    fit(c, o.t1, 'italic 400 62px ' + SERIF, o.fg, w / 2, 128, 230); fit(c, o.t2, 'italic 400 62px ' + SERIF, o.fg, w / 2, 188, 230);
-    text(c, o.sub, '500 19px ' + SANS, o.fg, w / 2, 284);
-  });
   function addPack(geo: BoxGeometry, mats: Material[], x: number, y: number, z: number, key?: string, ry = 0) {
     const m = new Mesh(geo, mats); m.position.set(x, y + geo.parameters.height / 2, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true;
     if (key) keyed(m, key); root.add(m); return m;
@@ -130,11 +134,23 @@ function buildBodega() {
   [-3.4, -1.65, .1, 1.7].forEach(x => box(.05, 2.1, .4, wood, x, 1.25, -3.8));
   [.5, .95, 1.4, 1.85].forEach(y => box(5.1, .03, .4, wood, -.85, y, -3.8));
   [.95, 1.4].forEach(y => { for (let k = 0; k < 13; k++) { const x = -3.28 + k * .128; addPack(harinaGeo, harinaMats, x, y + .015, -3.84, 'harina'); addPack(harinaGeo, harinaMats, x, y + .015, -3.72, 'harina', (k % 4 - 1.5) * .03); } });
-  const prodGeo = new BoxGeometry(.26, .34, .17);
-  productKeys.forEach((k, i) => {
-    const pack = storeItems[k].pack!, mats = packMats(packTex({ ...pack, sun: k === 'p3' }), pack.bg), x = -1.42 + i * .36;
-    addPack(prodGeo, mats, x, 1.415, -3.86, k); addPack(prodGeo, mats, x, 1.415, -3.69, k, i % 2 ? .04 : -.04);
-  });
+  // Papelón: cones of raw cane sugar wrapped in dry leaves, two rows on the middle shelf.
+  const papelonGeo = new CylinderGeometry(.05, .072, .17, 10), papelonMats = ['#4e2c10', '#5e3615', '#432509'].map(c => std(c, .85)), leafWrap = std('#a88b55', .95), tie = std('#d8c9a0', .9);
+  for (let k = 0; k < 16; k++) { const x = -1.6 + (k % 8) * .155, z = k < 8 ? -3.86 : -3.71, p = new Mesh(papelonGeo, papelonMats[k % 3]); p.position.set(x, 1.5, z); p.rotation.y = k; p.castShadow = true; root.add(p);
+    // Dry banana-leaf wrap around the lower half, tied with fibre.
+    const w = new Mesh(new CylinderGeometry(.064, .076, .09, 10, 1, true), leafWrap); w.position.set(x, 1.46, z); w.castShadow = true; root.add(w);
+    const t = new Mesh(new TorusGeometry(.066, .005, 4, 14), tie); t.rotation.x = Math.PI / 2; t.position.set(x, 1.49, z); root.add(t); }
+  // Casabe: big thin cassava breads stacked on the top shelf.
+  const casabeTex = ctex(256, 256, c => { c.fillStyle = '#e2c995'; c.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++) { c.fillStyle = `rgba(${120 + (i % 5) * 12},${78 + (i % 7) * 6},36,${.12 + (i % 4) * .06})`; c.beginPath(); c.arc((i * 97) % 256, (i * 53) % 256, 2 + (i % 6), 0, Math.PI * 2); c.fill(); } });
+  const casabeGeo = new CylinderGeometry(.17, .17, .012, 28), casabeMat = new MeshStandardMaterial({ map: casabeTex, roughness: .95 });
+  [-1.32, -.3].forEach(x => { for (let k = 0; k < 9; k++) { const c = new Mesh(casabeGeo, casabeMat); c.position.set(x + (k % 2 ? .01 : -.01), 1.875 + k * .015, -3.78); c.rotation.y = k; c.castShadow = true; root.add(c); } });
+  // Malta: dark bottles with a red-and-gold label along the bottom shelf.
+  const maltaLabel = ctex(256, 96, (c, w) => { c.fillStyle = '#b3201f'; c.fillRect(0, 0, w, 96); c.fillStyle = '#e8b93a'; c.fillRect(0, 10, w, 6); c.fillRect(0, 80, w, 6);
+    [w * .25, w * .75].forEach(x => fit(c, 'MALTA', '800 34px ' + SANS, '#f6e3a0', x, 60, 110)); });
+  const maltaGlass = new LatheGeometry([[0, 0], [.03, 0], [.032, .006], [.032, .12], [.026, .145], [.014, .18], [.013, .205], [0, .205]].map(p => new Vector2(p[0], p[1])), 18);
+  const maltaBand = new CylinderGeometry(.0326, .0326, .07, 24, 1, true); maltaBand.translate(0, .07, 0);
+  for (let k = 0; k < 24; k++) { const x = -.6 + (k % 12) * .19, z = k < 12 ? -3.86 : -3.7, g = new Group(); g.position.set(x, .515, z); g.rotation.y = k * 1.3;
+    g.add(new Mesh(maltaGlass, std('#1d0f06', .1, { metalness: .15 }))); g.add(new Mesh(maltaBand, new MeshStandardMaterial({ map: maltaLabel, roughness: .6 }))); g.traverse(o => { o.castShadow = true; }); root.add(g); }
   const fGeo = new BoxGeometry(.16, .24, .1);
   for (let k = 0; k < 9; k++) addPack(fGeo, fillers[k % 4], -1.5 + k * .19, .965, -3.75, undefined, (k % 3 - 1) * .05);
   for (let k = 0; k < 14; k++) addPack(fGeo, fillers[(k + 2) % 4], -3.25 + k * .19, .515, -3.75);
@@ -186,8 +202,11 @@ function buildBodega() {
   }, [9, 3]);
   box(3.6, 1, .6, [wood, wood, wood, wood, new MeshStandardMaterial({ map: tileTex, roughness: .35 }), wood], 0, .5, -.9);
   box(3.72, .05, .7, std('#7c5a3a', .6), 0, 1.025, -.9);
-  box(.4, .2, .3, std('#3b4a48', .6), -1, 1.15, -1);
-  box(.22, .12, .02, std('#203a2a', .4, { emissive: new Color('#7cf0a2'), emissiveIntensity: .6 }), -1, 1.3, -.93).rotation.x = -.3;
+  // The cash register is a CC0 scanned model, placed in Props.tsx.
+  // Pan canilla: long soft loaves standing in a wicker basket at the end of the counter.
+  const basket = new Mesh(new CylinderGeometry(.17, .13, .2, 20, 1, true), new MeshStandardMaterial({ color: '#a77b45', roughness: .95, side: DoubleSide })); basket.position.set(1.4, 1.15, -.92); basket.castShadow = true; root.add(basket);
+  const loafMat = std('#d39a52', .75);
+  for (let i = 0; i < 6; i++) { const a = i * 1.05, l = new Mesh(new CapsuleGeometry(.032, .42, 4, 10), loafMat); l.position.set(1.4 + Math.cos(a) * .06, 1.33, -.92 + Math.sin(a) * .06); l.rotation.set(Math.sin(a) * .22, 0, Math.cos(a) * .22); l.castShadow = true; root.add(l); }
   const jar = new Mesh(new CylinderGeometry(.1, .1, .24, 24), new MeshStandardMaterial({ color: '#ffffff', roughness: .05, transparent: true, opacity: .25 })); jar.position.set(-.35, 1.17, -.95); root.add(jar);
   ['#e23b5a', '#f2b33d', '#3aa8d8', '#6cc04a'].forEach((col, ci) => { for (let i = ci; i < 16; i += 4) { const cd = new Mesh(new SphereGeometry(.025, 10, 8), std(col, .3)); cd.position.set(-.35 + Math.cos(i * 2.4) * .05, 1.08 + Math.floor(i / 5) * .04, -.95 + Math.sin(i * 2.4) * .05); root.add(cd); } });
   keyed(box(.22, .016, .3, std('#2f5fa0', .7), .55, 1.058, -.85), 'libreta').rotation.y = .25;
@@ -196,30 +215,10 @@ function buildBodega() {
   beam([.9, 0, -1.6], [.9, .72, -1.6], .03, .03, iron);
   const seat = new Mesh(new CylinderGeometry(.18, .18, .06, 20), std('#c4312b', .6)); seat.position.set(.9, .75, -1.6); seat.castShadow = true; root.add(seat);
 
-  // Sidewalk: Brahma crates, domino table, plastic chairs, chalkboard
-  const crateMat = std('#c8261e', .55);
-  const brahmaTex = ctex(256, 96, (c, w) => { c.fillStyle = '#c8261e'; c.fillRect(0, 0, w, 96); c.fillStyle = '#ffffff'; c.fillRect(20, 12, w - 40, 5); fit(c, 'BRAHMA', '700 64px Impact,"Arial Narrow",sans-serif', '#ffffff', w / 2, 80, 220); });
-  const brahmaMat = new MeshStandardMaterial({ map: brahmaTex, roughness: .55 });
-  function crate(x: number, y: number, z: number, ry = 0) {
-    const g = new Group(); g.position.set(x, y, z); g.rotation.y = ry;
-    box(.38, .02, .29, crateMat, 0, .01, 0, g); box(.38, .28, .02, crateMat, 0, .14, .135, g); box(.38, .28, .02, crateMat, 0, .14, -.135, g); box(.02, .28, .29, crateMat, .18, .14, 0, g); box(.02, .28, .29, crateMat, -.18, .14, 0, g);
-    const label = new Mesh(new PlaneGeometry(.3, .11), brahmaMat); label.position.set(0, .15, .147); g.add(label);
-    const back = label.clone(); back.position.z = -.147; back.rotation.y = Math.PI; g.add(back);
-    root.add(g);
-  }
-  crate(3.15, 0, 1.05); crate(3.15, .3, 1.05); crate(3.6, 0, 1.45, .35); crate(3.55, .3, 1.45, .3);
-  const plastic = std('#f3f3ee', .45);
-  const tableTop = new Mesh(new CylinderGeometry(.45, .45, .04, 32), plastic); tableTop.position.set(-3, .7, 1.45); tableTop.castShadow = tableTop.receiveShadow = true; root.add(tableTop);
-  beam([-3, 0, 1.45], [-3, .7, 1.45], .05, .04, plastic);
+  // Sidewalk: crates, the domino table and plastic chairs are CC0 scanned models (Props.tsx);
+  // the dominoes and the chalkboard stay here.
   const domino = std('#fbfbf6', .4);
-  for (let i = 0; i < 9; i++) box(.05, .012, .1, domino, -3.18 + (i % 5) * .07, .728, 1.32 + Math.floor(i / 5) * .2).rotation.y = (i % 3) * .4;
-  function chair(x: number, z: number, ry: number) {
-    const g = new Group(); g.position.set(x, 0, z); g.rotation.y = ry;
-    box(.46, .04, .44, plastic, 0, .45, 0, g); box(.46, .42, .04, plastic, 0, .7, -.2, g);
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(p => beam([p[0] * .2, 0, p[1] * .19], [p[0] * .2, .45, p[1] * .19], .02, .02, plastic, g));
-    root.add(g);
-  }
-  chair(-3.7, 1.75, 1.2); chair(-2.35, 1.9, -1.3);
+  for (let i = 0; i < 9; i++) box(.05, .012, .1, domino, -3.18 + (i % 5) * .07, .658, 1.32 + Math.floor(i / 5) * .2).rotation.y = (i % 3) * .4;
   const boardTex = ctex(300, 420, (c, w) => {
     c.fillStyle = '#22392f'; c.fillRect(0, 0, w, 420); text(c, 'ENCARGOS', '600 34px ' + SANS, '#f5e7a6', w / 2, 62);
     ['Web exprés', 'Web + tienda', 'App', 'Juego', 'Mundo 3D'].forEach((t, i) => text(c, t, 'italic 400 40px ' + SERIF, '#eef0e4', w / 2, 128 + i * 50));
@@ -262,7 +261,8 @@ function buildBodega() {
   plane(.66, .99, new MeshStandardMaterial({ map: posterTex, roughness: .7 }), -3, 1.8, .02);
 
   // A mango tree throws dappled shade on the whitewashed wall next door
-  root.add(createMangoTree(4.6, 2.6, 23, .72));
+  // Kept to the right of the facade so its canopy frames the sign instead of covering it.
+  root.add(createMangoTree(6.8, 2.8, 23, .72));
 
   // Whitewashed house next door
   const cal = std('#f3f1ea', .95), calTrim = std('#e7e2d6', .95), shutter = std('#3a8e86', .7);
@@ -317,17 +317,12 @@ export function Pueblo() {
     c.fillStyle = '#cbbfa6'; c.fillRect(0, 0, 256, 256);
     for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { c.fillStyle = `hsl(${36 + (x * 7 + y * 3) % 8},${18 + (x + y) % 3 * 4}%,${70 + (x * 5 + y * 11) % 9}%)`; c.fillRect(x * 32 + (y % 2) * 16 + 2, y * 32 + 2, 28, 28); }
     const tex = new CanvasTexture(cv); tex.colorSpace = SRGBColorSpace; tex.wrapS = tex.wrapT = RepeatWrapping; tex.repeat.set(3.4, 6.2);
-    const pave = new Mesh(new PlaneGeometry(6.9, 12.6), new MeshStandardMaterial({ map: tex, roughness: .9 })); pave.rotation.x = -Math.PI / 2; pave.position.set(12.9, .07, 9.2); pave.receiveShadow = true; g.add(pave);
+    // Cobbled plaza floor from a CC0 set, about 1.6 m per texture repeat.
+    void tex; const pave = new Mesh(new PlaneGeometry(6.9, 12.6), applyPbr(new MeshStandardMaterial({ color: new Color(1.15, 1.08, .98) }), 'cobblestone_square', { repeat: [6.9 / 1.6, 12.6 / 1.6] })); pave.rotation.x = -Math.PI / 2; pave.position.set(12.9, .1, 9.2); pave.receiveShadow = true; g.add(pave);
     const wood = new MeshStandardMaterial({ color: '#8a6440', roughness: .85 }), iron = new MeshStandardMaterial({ color: '#26302e', roughness: .5, metalness: .5 });
-    [[10.6, 6.2, 0], [10.6, 11.4, 0], [15.2, 13.6, Math.PI / 2]].forEach(([x, z, r]) => {
-      const b = new Group(); b.position.set(x, .07, z); b.rotation.y = r;
-      [[0, .45, 0, 1.6, .06, .45], [0, .75, -.2, 1.6, .3, .05]].forEach(([bx, by, bz, w, h, d]) => { const m = new Mesh(new BoxGeometry(w, h, d), wood); m.position.set(bx, by, bz); m.castShadow = m.receiveShadow = true; b.add(m); });
-      [-.7, .7].forEach(lx => b.add(trunk([lx, 0, 0], [lx, .45, 0], .03, .03, iron, 6)));
-      g.add(b);
-    });
-    g.add(trunk([12.2, .07, 4.7], [12.2, 3.1, 4.7], .05, .04, iron, 8));
-    const lampGlass = new Mesh(new CylinderGeometry(.16, .12, .4, 6), new MeshStandardMaterial({ color: '#f4e3b0', emissive: '#ffcf7a', emissiveIntensity: .6, roughness: .3 })); lampGlass.position.set(12.2, 3.3, 4.7); g.add(lampGlass);
-    g.add(createMangoTree(10.8, 14.2, 41, .8));
+    // Plaza benches are CC0 scanned models (Props.tsx).
+    // The plaza lamp is now a scanned wall lantern on the bodega facade (Props.tsx).
+    g.add(createMangoTree(10.8, 14.2, 41, .8, [15.5, 11.3, 1.6, 3.2])); // keep fruit clear of the raspado cart's parasol
     return g;
   }, []);
   return <>

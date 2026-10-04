@@ -1,14 +1,14 @@
 import { Color, Vector3, type DirectionalLight, type HemisphereLight, type Scene, Fog } from 'three';
 
-// One day across the scroll: morning on arrival, noon in the studio, afternoon at the bodega, sunset, then night on the horizon.
+// Afternoon into night across the scroll: golden light at the bodega (the sun from the west lights its
+// facade), a lower warmer sun through the studio, sunset over the archipelago, then night on the horizon.
 type Key = { p: number; sun: [number, number, number]; color: string; intensity: number; hemiSky: string; hemiGround: string; hemi: number; top: string; horizon: string };
 const KEYS: Key[] = [
-  { p: 0, sun: [24, 16, 18], color: '#ffe2bd', intensity: 3.1, hemiSky: '#cfe3f2', hemiGround: '#e2d8c2', hemi: .55, top: '#5f9fd2', horizon: '#cfe6ea' },
-  { p: .45, sun: [-4, 34, 12], color: '#fff6e6', intensity: 3.6, hemiSky: '#bcdcf2', hemiGround: '#e0d6c0', hemi: .52, top: '#3f8fd0', horizon: '#bfe0ea' },
-  { p: .82, sun: [-24, 15, 12], color: '#ffd6a0', intensity: 3.3, hemiSky: '#d9d6c6', hemiGround: '#d6c6a8', hemi: .5, top: '#5a92c8', horizon: '#efd6b8' },
-  { p: .93, sun: [-30, 6.5, 10], color: '#ff9a55', intensity: 2.6, hemiSky: '#e8b59a', hemiGround: '#8a7060', hemi: .4, top: '#5d78b2', horizon: '#f2a978' },
-  // Moonlight: the sun light becomes a cool, high key light so the island still reads at night.
-  { p: 1, sun: [-12, 24, -14], color: '#a9bcff', intensity: .4, hemiSky: '#3f5288', hemiGround: '#1d2335', hemi: .24, top: '#081226', horizon: '#25365e' },
+  { p: 0, sun: [-24, 15, 12], color: '#ffdcae', intensity: 4.3, hemiSky: '#d6dce0', hemiGround: '#d6c6a8', hemi: .34, top: '#3a7ccc', horizon: '#ead9c4' },
+  { p: .5, sun: [-20, 20, 16], color: '#ffdcb0', intensity: 4.2, hemiSky: '#e2ddd2', hemiGround: '#e0cfae', hemi: .32, top: '#3f78c4', horizon: '#eed6bc' },
+  { p: .8, sun: [-26, 13, 12], color: '#ffc48c', intensity: 3.8, hemiSky: '#e6d0b8', hemiGround: '#c8ad8a', hemi: .34, top: '#4a74b8', horizon: '#f0caa2' },
+  // Sunset on the west beach: the sun sits low over the sea, straight ahead of the last camera.
+  { p: 1, sun: [-40, 4.2, 9], color: '#ff9550', intensity: 2.8, hemiSky: '#e8b59a', hemiGround: '#9a7a66', hemi: .42, top: '#5a78b4', horizon: '#f5ad78' },
 ];
 
 // Raw (display-space) colors for hand-written shaders that skip color management.
@@ -29,8 +29,9 @@ export function applyDaylight(p: number, sun: DirectionalLight, hemi: Hemisphere
   sky.sunColor.copy(rawKeys[i].color).lerp(rawKeys[i + 1].color, f);
   sky.top.copy(rawKeys[i].top).lerp(rawKeys[i + 1].top, f);
   sky.horizon.copy(rawKeys[i].horizon).lerp(rawKeys[i + 1].horizon, f);
-  sky.night.value = Math.min(1, Math.max(0, (p - .93) / .07));
-  sky.warmth.value = Math.min(1, Math.max(0, (p - .7) / .23)) * (1 - sky.night.value);
+  // Dusk, not night: lamps, windows and festoons come on as the sun touches the sea.
+  sky.night.value = Math.min(1, Math.max(0, (p - .88) / .12)) * .35;
+  sky.warmth.value = Math.min(1, Math.max(0, (p - .7) / .26));
   sun.position.copy(sky.sunDir).multiplyScalar(45);
   sun.color.copy(linKeys[i].color).lerp(linKeys[i + 1].color, f);
   sun.intensity = a.intensity + (b.intensity - a.intensity) * f;

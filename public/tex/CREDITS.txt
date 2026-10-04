@@ -1,0 +1,18 @@
+PBR texture sets (1k JPG: Diffuse, nor_gl, Rough) from Poly Haven, CC0 (public domain).
+https://polyhaven.com/license
+- white_stucco          https://polyhaven.com/a/white_stucco
+- cobblestone_square    https://polyhaven.com/a/cobblestone_square
+- palm_bark             https://polyhaven.com/a/palm_bark
+- bark_brown_02         https://polyhaven.com/a/bark_brown_02
+- brown_planks_05       https://polyhaven.com/a/brown_planks_05
+- coast_sand_01         https://polyhaven.com/a/coast_sand_01
+Leaf, frond and bract textures are painted procedurally in src/scene/realism.ts.
+
+3D models (public/models, compressed to GLB with gltf-transform: meshopt + WebP, 512 px except CashRegister_01 at 1024) from Poly Haven, CC0:
+plastic_monobloc_chair_01, plastic_crate_02, round_wooden_table_01, street_lamp_02, painted_wooden_bench,
+CashRegister_01, lifebuoy, lambis_shell, potted_plant_04, exterior_aircon_unit (all https://polyhaven.com/a/<id>).
+Also: classic_laptop, desk_lamp_arm_01, GreenChair_01, WoodenTable_02, Television_01, boombox.
+
+Animated birds (public/models/seagull.glb, macaw.glb), CC BY 4.0, optimized with gltf-transform:
+- "Seagull" by Dayvable — https://sketchfab.com/3d-models/seagull-dc42ffc81c86480e9e7f7752fa134174
+- "Scarlet Macaw" by Mateus Schwaab — https://sketchfab.com/3d-models/scarlet-macaw-0bb61160866b4811bd79b6d11e3d8907

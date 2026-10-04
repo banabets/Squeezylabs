@@ -13,6 +13,8 @@ export function ClearWater() {
     uSun: { value: sky.sunDir },
     uFog: { value: sky.horizon },
     uSkyRef: { value: sky.horizon },
+    uSkyTop: { value: sky.top },
+    uSunCol: { value: sky.sunColor },
     uFogRange: { value: new Vector2(80, 320) },
     uMain: { value: new Vector4(MAIN.rxW, MAIN.rxE, MAIN.rzN, MAIN.rzS) },
     uCays: { value: CAYS.map(c => new Vector4(c.x, c.z, c.rx, c.rz)) },
@@ -21,7 +23,7 @@ export function ClearWater() {
   }), []);
   useFrame((_, dt) => { if (!journey.paused && !journey.reduced) uniforms.uTime.value += dt; });
   const material = useMemo(() => new ShaderMaterial({ vertexShader: waterVertex, fragmentShader: waterFragment, uniforms }), [uniforms]);
-  // A finely tessellated sheet around the archipelago carries the faceted swell; a flat sheet beneath it reaches the horizon.
+  // A finely tessellated sheet around the archipelago carries the swell; a flat sheet beneath it reaches the horizon.
   return <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6, -.31, 10]} material={material}><planeGeometry args={[150, 130, 96, 84]} /></mesh>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.42, 0]} material={material}><planeGeometry args={[900, 900]} /></mesh>

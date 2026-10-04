@@ -2,12 +2,11 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   CanvasTexture, CatmullRomCurve3, CircleGeometry, Color, ConeGeometry, DoubleSide, Group, IcosahedronGeometry, InstancedMesh, Mesh, MeshStandardMaterial,
-  Object3D, QuadraticBezierCurve3, RepeatWrapping, SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace, TubeGeometry, Vector3, BoxGeometry,
+  Object3D, RepeatWrapping, SphereGeometry, Sprite, SpriteMaterial, SRGBColorSpace, TubeGeometry, Vector3, BoxGeometry,
 } from 'three';
 import { journey } from '../data/journey';
-import { CAYS, cayWobble, mainPoint } from '../data/world';
-import { leafGeometry, rng } from './Mango';
-import { addWind } from './wind';
+import { mainPoint } from '../data/world';
+import { rng } from './Mango';
 import { sky } from './daylight';
 
 const moving = () => !journey.paused && !journey.reduced;
@@ -56,33 +55,6 @@ export function Pelican({ position }: { position: [number, number, number] }) {
     return g;
   }, []);
   return <primitive object={g} position={position} rotation={[0, 2.3, 0]} />;
-}
-
-// Red mangroves on the west edge of a cay, standing on arched prop roots in the shallows.
-export function Mangroves() {
-  const g = useMemo(() => {
-    const g = new Group(), c = CAYS[1], R = rng(17), root = new MeshStandardMaterial({ color: '#6b3b2a', roughness: .9 });
-    const leafMat = addWind(new MeshStandardMaterial({ roughness: .7, side: DoubleSide }), { base: 1, amp: .01, flutter: .006 });
-    const leaves = new InstancedMesh(leafGeometry, leafMat, 6 * 520), o = new Object3D(), dark = ['#244d24', '#2d5a2a', '#356630'].map(h => new Color(h));
-    let n = 0;
-    for (let p = 0; p < 6; p++) {
-      const a = Math.PI + (p - 2.5) * .32, v = cayWobble(a, 1.7) * (.92 + R() * .1), cx = c.x + Math.cos(a) * c.rx * v, cz = c.z + Math.sin(a) * c.rz * v, top = 1.4 + R() * .5;
-      for (let k = 0; k < 9; k++) {
-        const ra = k / 9 * 6.28 + R(), rr = .9 + R() * .6, start = new Vector3(cx + Math.cos(ra) * .15, top - .2, cz + Math.sin(ra) * .15), end = new Vector3(cx + Math.cos(ra) * rr, -.6, cz + Math.sin(ra) * rr);
-        const mid = start.clone().lerp(end, .4); mid.y = top + .1; mid.x += Math.cos(ra) * .4; mid.z += Math.sin(ra) * .4;
-        const tube = new Mesh(new TubeGeometry(new QuadraticBezierCurve3(start, mid, end), 10, .035, 5), root); tube.castShadow = true; g.add(tube);
-      }
-      for (let i = 0; i < 520; i++) {
-        const u = R() * 2 - 1, an = R() * 6.28, sq = Math.sqrt(1 - u * u), r = 1.6 * Math.cbrt(R());
-        o.position.set(cx + Math.cos(an) * sq * r, top + .9 + u * .55 * r, cz + Math.sin(an) * sq * r);
-        o.rotation.set(R() * 6, R() * 6, R() * 6); o.scale.setScalar(.15 + R() * .07); o.updateMatrix();
-        leaves.setMatrixAt(n, o.matrix); leaves.setColorAt(n, dark[n % 3]); n++;
-      }
-    }
-    leaves.count = n; leaves.castShadow = true; leaves.raycast = noRaycast; g.add(leaves);
-    return g;
-  }, []);
-  return <primitive object={g} />;
 }
 
 // Shells, a line of dry seaweed at the high-tide mark and a trail of footprints toward the water.

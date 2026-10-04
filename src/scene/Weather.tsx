@@ -12,7 +12,8 @@ const CENTER = { x: 6, z: 8 }, white = new Color('#ffffff'), moonlit = new Color
 export function LowPolyClouds() {
   const { group, clouds, material } = useMemo(() => {
     const R = rng(17), group = new Group();
-    const material = new MeshStandardMaterial({ color: '#ffffff', roughness: 1, flatShading: true, emissive: '#ffffff', emissiveIntensity: .12 });
+    // Realistic pass: the visible clouds live in the sky shader; these meshes only cast drifting shadows.
+    const material = new MeshStandardMaterial({ color: '#ffffff', roughness: 1, emissive: '#ffffff', emissiveIntensity: .12, colorWrite: false, depthWrite: false });
     const clouds = Array.from({ length: 9 }, (_, i) => {
       const puffs: BufferGeometry[] = [], count = 5 + Math.floor(R() * 3);
       for (let k = 0; k < count; k++) {

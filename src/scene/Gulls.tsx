@@ -52,33 +52,3 @@ export function Birds(){
 }
 
 // Guacamayas: a scarlet and a blue-and-gold macaw perched on the arrival pergola, and a pair flying over the village.
-function macaw(colors:{body:string;wing:string;wing2:string;tail:string;chest:string}){
- const g=new Group(),m=(c:string)=>flat(c),head=new Group();
- const add=(geo:SphereGeometry|ConeGeometry|BoxGeometry,mat:Material,x:number,y:number,z:number,parent:Group=g)=>{const o=new Mesh(geo,mat);o.position.set(x,y,z);o.castShadow=true;parent.add(o);return o;};
- add(new SphereGeometry(.13,10,8),m(colors.body),0,.16,0).scale.set(1,1.35,1);
- add(new SphereGeometry(.1,10,8),m(colors.chest),0,.12,.06).scale.set(.9,1.1,.6);
- head.position.set(0,.36,.03);g.add(head);
- add(new SphereGeometry(.085,10,8),m(colors.body),0,0,0,head);
- add(new SphereGeometry(.045,8,6),m('#f4efe4'),0,0,.06,head).scale.set(1.3,1,.6);
- add(new SphereGeometry(.012,6,4),m('#111111'),.04,.01,.07,head);add(new SphereGeometry(.012,6,4),m('#111111'),-.04,.01,.07,head);
- const beak=add(new ConeGeometry(.035,.09,6),m('#2a2420'),0,-.03,.1,head);beak.rotation.x=Math.PI/2+.6;
- for(const s of[-1,1]){const w=add(new BoxGeometry(.05,.22,.14),m(colors.wing),s*.12,.17,-.01);w.rotation.z=s*.12;add(new BoxGeometry(.045,.12,.12),m(colors.wing2),s*.125,.08,-.03).rotation.z=s*.12;}
- const tail=add(new ConeGeometry(.05,.5,4),m(colors.tail),0,-.18,-.08);tail.rotation.x=Math.PI-.25;
- noRaycast(g);return {g,head};
-}
-const SCARLET={body:'#d2302b',wing:'#f2c14e',wing2:'#2f6fb0',tail:'#d2302b',chest:'#d2302b'};
-const BLUEGOLD={body:'#2f6fb0',wing:'#2f6fb0',wing2:'#1f4f8a',tail:'#2f6fb0',chest:'#f2c14e'};
-export function Macaws(){
- const {group,perched,flyers}=useMemo(()=>{
-  const group=new Group();
-  const perched=[{...macaw(SCARLET),x:-1.05,ph:0},{...macaw(BLUEGOLD),x:-.55,ph:2.1}];
-  perched.forEach(p=>{p.g.position.set(p.x,3.73,3.8);p.g.rotation.y=.25;group.add(p.g);});
-  const flyers=[macaw(SCARLET),macaw(BLUEGOLD)].map((m,i)=>{const wings=[-1,1].map(s=>{const w=new Mesh(new BoxGeometry(.7,.02,.18),flat(i?'#2f6fb0':'#f2c14e'));w.position.set(s*.42,.2,0);w.castShadow=true;m.g.add(w);return w;});m.g.scale.setScalar(1.6);group.add(m.g);return{...m,wings,i};});
-  return{group,perched,flyers};
- },[]);
- const time=useRef(0);
- useFrame((_,dt)=>{if(!journey.paused&&!journey.reduced)time.current+=Math.min(dt,.05);const t=time.current;
-  perched.forEach(p=>{p.head.rotation.y=Math.sin(t*.9+p.ph)*.5*Math.max(0,Math.sin(t*.35+p.ph));p.head.rotation.x=Math.max(0,Math.sin(t*1.7+p.ph))*.25;});
-  flyers.forEach(f=>{const a=t*.18+f.i*.5,x=15+Math.cos(a)*9,z=6+Math.sin(a)*7;f.g.position.set(x+f.i*.9,7+Math.sin(t*.8+f.i)*.4,z+f.i*.6);f.g.rotation.set(-.6,Math.atan2(-Math.sin(a),Math.cos(a)*.78),0);f.wings.forEach((w,k)=>{w.rotation.z=(k?-1:1)*Math.sin(t*7+f.i)*.6;});});
- });return <primitive object={group}/>;
-}

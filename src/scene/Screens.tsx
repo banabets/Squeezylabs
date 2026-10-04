@@ -63,6 +63,8 @@ export function ProjectScreen({ size, position, reel, cycle = false, onSelect }:
     const tex = new VideoTexture(v); tex.colorSpace = SRGBColorSpace; return { v, tex };
   }), []);
   useEffect(() => () => videos.forEach(x => { if (x) { x.v.pause(); x.tex.dispose(); } }), [videos]);
+  // Project screenshots, drawn with a slow pan so the screen feels alive.
+  const shots = useMemo(() => reels.map(r => { const img = new Image(); img.src = `/projects/${r.id}.webp`; return img; }), []);
   const state = useRef({ t: 0, acc: 0, current: -1 }), world = useMemo(() => new Vector3(), []);
   useFrame(({ camera }, dt) => {
     const s = state.current, mesh = ref.current; if (!mesh) return;
@@ -76,8 +78,12 @@ export function ProjectScreen({ size, position, reel, cycle = false, onSelect }:
     }
     if (video) return;
     s.acc += dt; if (s.acc < 1 / 15) return; s.acc = 0; // 15 fps is plenty for a screen in the scene
-    MOCK[r.kind](ctx, W, H, s.t);
-    label(ctx, H, `DEMO · ${r.title}`);
+    const img = shots[index];
+    if (img.complete && img.naturalWidth) {
+      const f = (s.t % 6) / 6, sw = img.naturalWidth * .82, sh = sw * H / W;
+      ctx.drawImage(img, (img.naturalWidth - sw) * f, Math.min(img.naturalHeight - sh, (img.naturalHeight - sh) * (.2 + f * .3)), sw, sh, 0, 0, W, H);
+    } else MOCK[r.kind](ctx, W, H, s.t);
+    label(ctx, H, r.title);
     texture.needsUpdate = true;
   });
   return <mesh ref={ref} position={position} onClick={onSelect} onPointerOver={onSelect ? () => { document.body.style.cursor = 'pointer'; } : undefined} onPointerOut={onSelect ? () => { document.body.style.cursor = 'auto'; } : undefined}>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshDepthMaterial, MeshStandardMaterial, Object3D, Quaternion, RGBADepthPacking, Shape, ShapeGeometry, SphereGeometry, Vector3, type Material } from 'three';
 import { addWind } from './wind';
+import { applyPbr, lanceTexture } from './realism';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export function rng(seed: number) {
@@ -8,7 +9,8 @@ export function rng(seed: number) {
 }
 
 // Broad leaf used by hedges and flowers.
-export const leafGeometry = (() => { const s = new Shape(); s.moveTo(0, 0); s.quadraticCurveTo(.42, .45, 0, 1.25); s.quadraticCurveTo(-.42, .45, 0, 0); return new ShapeGeometry(s, 5); })();
+// UVs are normalized (u across, v base to tip) so the shared broad-leaf texture lines up with the midrib.
+export const leafGeometry = (() => { const s = new Shape(); s.moveTo(0, 0); s.quadraticCurveTo(.42, .45, 0, 1.25); s.quadraticCurveTo(-.42, .45, 0, 0); const g = new ShapeGeometry(s, 5), p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / .5 + .5, p.getY(i) / 1.25); return g; })();
 
 // Long mango leaf, folded along the midrib; length 1 along +y.
 const lanceGeometry = (() => {
@@ -34,14 +36,14 @@ export function trunk(a: number[], b: number[], r0: number, r1: number, mat: Mat
 let shared: { leaf: MeshStandardMaterial; fruit: MeshStandardMaterial; leafDepth: MeshDepthMaterial; fruitDepth: MeshDepthMaterial; bark: MeshStandardMaterial; stem: MeshStandardMaterial; fruitGeo: SphereGeometry } | null = null;
 function materials() {
   if (shared) return shared;
-  const fruitGeo = new SphereGeometry(.1, 12, 9); fruitGeo.scale(1, 1.32, .88);
+  const fruitGeo = new SphereGeometry(.068, 14, 10); fruitGeo.scale(1, 1.3, .86);
   const wind = { base: 2.5, amp: .012, flutter: .012 };
   shared = {
-    leaf: addWind(new MeshStandardMaterial({ roughness: .8, flatShading: true, side: DoubleSide }), wind),
+    leaf: addWind(new MeshStandardMaterial({ map: lanceTexture(), roughness: .42, side: DoubleSide }), wind),
     fruit: addWind(new MeshStandardMaterial({ roughness: .4 }), { ...wind, flutter: 0 }),
     leafDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking, side: DoubleSide }), wind),
     fruitDepth: addWind(new MeshDepthMaterial({ depthPacking: RGBADepthPacking }), { ...wind, flutter: 0 }),
-    bark: new MeshStandardMaterial({ color: '#5a4632', roughness: .95 }),
+    bark: applyPbr(new MeshStandardMaterial({ color: '#b8a690' }), 'bark_brown_02', { repeat: [1, 2] }),
     stem: new MeshStandardMaterial({ color: '#4d5a2a', roughness: .8 }),
     fruitGeo,
   };
@@ -50,14 +52,16 @@ function materials() {
 
 const greens = ['#3f8f45', '#4a9444', '#5aa64a', '#367d3c', '#57a04c'].map(c => new Color(c));
 const flushColors = ['#7e3426', '#9a4a30', '#b26a40', '#8f5a34'].map(c => new Color(c));
-const fruitColors = ['#6f9a34', '#a9b23a', '#e6b230', '#ef8a2a', '#d4532c'].map(c => new Color(c));
+const fruitColors = ['#7aa03a', '#a9b23a', '#d9b43a', '#e8a032', '#cf6a34'].map(c => new Color(c));
 const noRaycast = () => {};
 type Tip = { p: Vector3; d: Vector3; big: boolean; flush?: boolean; n?: number };
 
 // A mature mango tree grown branch by branch: buttressed trunk, five scaffold limbs that fork four times,
 // rosettes of long leaves at every tip, copper-colored new flush and fruit hanging on long stems.
 // About 9 m tall at scale 1. Coordinates are in the parent's space.
-export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
+// keepOut: [x, z, radius, height] in world space (tree parent at the origin); no fruit hangs inside it,
+// e.g. over the raspado cart's parasol.
+export function createMangoTree(x: number, z: number, seed: number, scale = 1, keepOut?: [number, number, number, number]) {
   const m = materials(), g = new Group(), R = rng(seed), tips: Tip[] = [], Y = new Vector3(0, 1, 0);
   g.position.set(x, 0, z); g.scale.setScalar(scale); g.rotation.y = R() * 6.28;
   g.add(trunk([0, 0, 0], [0, 2.7, 0], .46, .32, m.bark, 12));
@@ -83,7 +87,7 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
   for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283 + R() * .5; grow(top, new Vector3(Math.cos(a) * .8, 1, Math.sin(a) * .8).normalize(), 2.4 + R() * .5, .24, 4); }
 
   let count = 0;
-  for (const tp of tips) { tp.flush = tp.big && R() < .07; tp.n = tp.big ? 30 : 16; count += tp.n; }
+  for (const tp of tips) { tp.flush = tp.big && R() < .07; tp.n = tp.big ? 88 : 46; count += tp.n; }
   const leaves = new InstancedMesh(lanceGeometry, m.leaf, count), o = new Object3D(), u = new Vector3(), v = new Vector3(), ld = new Vector3(), q = new Quaternion(), q2 = new Quaternion();
   let idx = 0;
   const gcd=(a:number,b:number):number=>b?gcd(b,a%b):a;
@@ -97,7 +101,7 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
       ld.y -= .15 + R() * .25; ld.normalize();
       q.setFromUnitVectors(Y, ld); q2.setFromAxisAngle(ld, phi + R());
       o.quaternion.copy(q2).multiply(q); o.position.copy(tp.p);
-      const L = (tp.big ? .45 : .36) * (.8 + R() * .4); o.scale.set(L * 1.5, L, L);
+      const L = (tp.big ? .38 : .31) * (.8 + R() * .4); o.scale.set(L * 1.4, L, L);
       const slot=(idx*stride)%count;
       o.updateMatrix(); leaves.setMatrixAt(slot, o.matrix);
       leaves.setColorAt(slot, tp.flush && k % 3 !== 0 ? flushColors[k % 4] : greens[(k + idx) % 5]); idx++;
@@ -105,8 +109,9 @@ export function createMangoTree(x: number, z: number, seed: number, scale = 1) {
   }
   const hanging: number[][] = [];
   for (const tp of tips) {
-    if (!tp.big || tp.flush || R() > .32) continue;
+    if (!tp.big || tp.flush || R() > .48) continue;
     const L = .35 + R() * .4, end = tp.p.clone().add(new Vector3((R() - .5) * .15, -L, (R() - .5) * .15));
+    if (keepOut) { const w = end.clone().multiplyScalar(scale).applyAxisAngle(Y, g.rotation.y); if (Math.hypot(w.x + x - keepOut[0], w.z + z - keepOut[1]) < keepOut[2] && w.y < keepOut[3]) continue; }
     g.add(trunk(tp.p.toArray(), end.toArray(), .008, .006, m.stem, 4));
     const n = 1 + Math.floor(R() * 3);
     for (let k = 0; k < n; k++) hanging.push([end.x + (k - 1) * .09, end.y - .1 - k * .04, end.z + (R() - .5) * .08, Math.floor(R() * 5)]);

@@ -4,6 +4,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 // Ink outline by the inverted-hull method: a back-face copy pushed out along smooth normals.
 // One shared material; width is in object units at 25 m and scales with distance.
 export const outlineWidth = { value: .03 };
+export const outlinesEnabled = false;
 export const outlineMaterial = new MeshBasicMaterial({ color: '#2b2230', side: BackSide });
 outlineMaterial.onBeforeCompile = shader => {
   shader.uniforms.uOutline = outlineWidth;
@@ -32,6 +33,8 @@ export function outlineMesh(geometry: BufferGeometry) {
 
 /** Adds one merged outline hull for every opaque, non-instanced mesh under `root` (e.g. a batched house). */
 export function addOutline(root: Object3D) {
+  // Ink outlines belonged to the diorama look; the realistic pass keeps scenery unlined.
+  if (!outlinesEnabled) return root;
   root.updateMatrixWorld(true);
   const inverse = new Matrix4().copy(root.matrixWorld).invert(), parts: BufferGeometry[] = [];
   root.traverse(o => {
